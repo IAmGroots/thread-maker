@@ -35,6 +35,10 @@ export default {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
         },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -56,6 +60,16 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      fontFamily: {
+        reading: ['"Charter"', '"Iowan Old Style"', "Georgia", "serif"],
+        ui: ["Inter", "Söhne", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        paper:
+          "0 1px 2px hsl(30 10% 15% / 0.06), 0 2px 8px hsl(30 10% 15% / 0.04)",
+        "paper-lg":
+          "0 2px 4px hsl(30 10% 15% / 0.06), 0 8px 24px hsl(30 10% 15% / 0.08)",
       },
     },
   },

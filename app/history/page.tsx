@@ -13,7 +13,12 @@ import {
   deleteThread,
   exportToJSON,
   exportToTXT,
+  exportSingleThreadToTXT,
+  exportSingleThreadToJSON,
   downloadFile,
+  parseImportFile,
+  importThreads,
+  slugifyTopic,
 } from "@/lib/storage/localStorage";
 import { formatDate, truncateText } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +33,9 @@ import {
   ArrowUpRight,
   X,
   Library,
+  Upload,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { copyToClipboard } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -50,9 +58,11 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredThreads, setFilteredThreads] = useState<SavedThread[]>([]);
   const [threadToDelete, setThreadToDelete] = useState<SavedThread | null>(null);
+  const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set());
 
   // Focus restoration ref for delete triggers
   const triggerButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadThreads();
@@ -88,6 +98,15 @@ export default function HistoryPage() {
     );
     setThreads(loaded);
     setFilteredThreads(loaded);
+  };
+
+  const toggleExpanded = (id: string) => {
+    setExpandedThreadIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const handleLoadToStudio = (thread: SavedThread) => {
@@ -133,8 +152,28 @@ export default function HistoryPage() {
     }
   };
 
+  const handleDownloadSingleTXT = (thread: SavedThread) => {
+    const txt = exportSingleThreadToTXT(thread);
+    const slug = slugifyTopic(thread.metadata.topic);
+    downloadFile(txt, `thread-${slug}-${Date.now()}.txt`, "text/plain");
+    toast({
+      title: t.toasts.exported,
+      description: t.toasts.exportedTxtDesc,
+    });
+  };
+
+  const handleDownloadSingleJSON = (thread: SavedThread) => {
+    const json = exportSingleThreadToJSON(thread);
+    const slug = slugifyTopic(thread.metadata.topic);
+    downloadFile(json, `thread-${slug}-${Date.now()}.json`, "application/json");
+    toast({
+      title: t.toasts.exported,
+      description: t.toasts.exportedJsonDesc,
+    });
+  };
+
   const handleExportJSON = () => {
-    const json = exportToJSON();
+    const json = exportToJSON(filteredThreads);
     downloadFile(json, `threads-${Date.now()}.json`, "application/json");
     toast({
       title: t.toasts.exported,
@@ -143,7 +182,7 @@ export default function HistoryPage() {
   };
 
   const handleExportTXT = () => {
-    const txt = exportToTXT();
+    const txt = exportToTXT(filteredThreads);
     downloadFile(txt, `threads-${Date.now()}.txt`, "text/plain");
     toast({
       title: t.toasts.exported,
@@ -151,13 +190,67 @@ export default function HistoryPage() {
     });
   };
 
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      try {
+        const content = String(event.target?.result || "");
+        const parsedThreads = parseImportFile(content, file.name);
+
+        if (parsedThreads.length > 0) {
+          const result = importThreads(parsedThreads);
+          loadThreads();
+          toast({
+            title: t.toasts.imported,
+            description: t.toasts.importedDesc(result.importedCount),
+          });
+        } else {
+          toast({
+            title: t.toasts.importFailed,
+            description: t.toasts.importFailedDesc,
+            variant: "destructive",
+          });
+        }
+      } catch (err) {
+        console.error("Error parsing import file:", err);
+        toast({
+          title: t.toasts.importFailed,
+          description: t.toasts.importFailedDesc,
+          variant: "destructive",
+        });
+      } finally {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
+    };
+
+    reader.onerror = () => {
+      toast({
+        title: t.toasts.importFailed,
+        description: t.toasts.importFailedDesc,
+        variant: "destructive",
+      });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
   return (
     <>
       <Header />
       <main className="min-h-screen bg-background text-foreground">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-5xl space-y-6 sm:space-y-8">
-          {/* Masthead & Global Export Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b">
+        <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+          {/* Masthead & Global Actions */}
+          <div className="flex flex-row sm:items-center justify-between gap-4 pb-4 border-b">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 {t.history.title}
@@ -167,30 +260,52 @@ export default function HistoryPage() {
               </p>
             </div>
 
-            {threads.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleExportJSON}
-                  variant="outline"
-                  size="sm"
-                  className="min-h-[38px] px-3 text-xs font-medium"
-                  aria-label={t.history.exportJson}
-                >
-                  <Download className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
-                  JSON
-                </Button>
-                <Button
-                  onClick={handleExportTXT}
-                  variant="outline"
-                  size="sm"
-                  className="min-h-[38px] px-3 text-xs font-medium"
-                  aria-label={t.history.exportTxt}
-                >
-                  <Download className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
-                  TXT
-                </Button>
-              </div>
-            )}
+            {/* Global Import & Export Actions */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,.txt,text/plain,application/json"
+                onChange={handleFileImport}
+                className="hidden"
+                aria-label={t.history.importAria}
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                variant="outline"
+                size="sm"
+                className="min-h-[38px] px-3 text-xs font-medium"
+                aria-label={t.history.importAria}
+              >
+                <Upload className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+                {t.history.import}
+              </Button>
+
+              {threads.length > 0 && (
+                <>
+                  <Button
+                    onClick={handleExportJSON}
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[38px] px-3 text-xs font-medium"
+                    aria-label={t.history.exportJson}
+                  >
+                    <Download className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+                    JSON
+                  </Button>
+                  <Button
+                    onClick={handleExportTXT}
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[38px] px-3 text-xs font-medium"
+                    aria-label={t.history.exportTxt}
+                  >
+                    <Download className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+                    TXT
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Search Bar */}
@@ -205,7 +320,7 @@ export default function HistoryPage() {
               />
               <Input
                 id="library-search"
-                type="search"
+                type="text"
                 placeholder={t.history.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -227,113 +342,203 @@ export default function HistoryPage() {
           {/* Thread List */}
           <div className="space-y-4">
             {filteredThreads.length > 0 ? (
-              filteredThreads.map((thread) => (
-                <article
-                  key={thread.metadata.id}
-                  className="rounded-xl border bg-card p-5 sm:p-6 text-card-foreground shadow-sm space-y-4 transition-colors hover:border-foreground/20"
-                >
-                  {/* Top Header Row: Topic & Actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="space-y-2 flex-1 min-w-0">
-                      <h2 className="text-base sm:text-lg font-semibold text-foreground leading-snug">
-                        {thread.metadata.topic}
-                      </h2>
+              filteredThreads.map((thread) => {
+                const isExpanded = expandedThreadIds.has(thread.metadata.id);
 
-                      {/* Metadata row */}
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground font-mono tabular-nums">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
-                          <span>{formatDate(thread.metadata.createdAt, locale)}</span>
+                return (
+                  <article
+                    key={thread.metadata.id}
+                    className="rounded-xl border bg-card p-5 sm:p-6 text-card-foreground shadow-sm space-y-4 transition-colors hover:border-foreground/20"
+                  >
+                    {/* Top Header Row: Topic & Actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="space-y-2 flex-1 min-w-0">
+                        <h2 className="text-base sm:text-lg font-semibold text-foreground leading-snug">
+                          {thread.metadata.topic}
+                        </h2>
+
+                        {/* Metadata row */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground font-mono tabular-nums">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>{formatDate(thread.metadata.createdAt, locale)}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>{t.common.tweets(thread.totalTweets)}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Hash className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>
+                              {thread.totalChars} {t.common.chars}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                          <span>{t.common.tweets(thread.totalTweets)}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Hash className="h-3.5 w-3.5" aria-hidden="true" />
-                          <span>
-                            {thread.totalChars} {t.common.chars}
-                          </span>
-                        </div>
+                      </div>
+
+                      {/* Actions Toolbar */}
+                      <div className="flex items-center gap-1.5 self-start shrink-0 flex-wrap">
+                        <Button
+                          onClick={() => handleLoadToStudio(thread)}
+                          variant="outline"
+                          size="sm"
+                          className="min-h-[36px] px-3 text-xs font-medium"
+                          aria-label={`${t.history.loadToStudio}: ${thread.metadata.topic}`}
+                        >
+                          <ArrowUpRight className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+                          {t.history.loadToStudio}
+                        </Button>
+
+                        <Button
+                          onClick={() => handleDownloadSingleTXT(thread)}
+                          variant="outline"
+                          size="sm"
+                          className="min-h-[36px] px-2.5 text-xs font-mono font-medium"
+                          aria-label={`${t.history.downloadTxt}: ${thread.metadata.topic}`}
+                          title={t.history.downloadTxt}
+                        >
+                          <FileText className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+                          TXT
+                        </Button>
+
+                        <Button
+                          onClick={() => handleDownloadSingleJSON(thread)}
+                          variant="outline"
+                          size="sm"
+                          className="min-h-[36px] px-2.5 text-xs font-mono font-medium"
+                          aria-label={`${t.history.downloadJson}: ${thread.metadata.topic}`}
+                          title={t.history.downloadJson}
+                        >
+                          <Download className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+                          JSON
+                        </Button>
+
+                        <Button
+                          onClick={() => handleCopy(thread)}
+                          variant="ghost"
+                          size="sm"
+                          className="min-h-[36px] px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                          aria-label={t.history.copyThreadAria}
+                          title={t.history.copyThreadAria}
+                        >
+                          <Copy className="h-4 w-4" aria-hidden="true" />
+                          <span className="sr-only">{t.history.copyThreadAria}</span>
+                        </Button>
+
+                        <Button
+                          ref={(el) => {
+                            if (el) {
+                              triggerButtonRefs.current.set(thread.metadata.id, el);
+                            } else {
+                              triggerButtonRefs.current.delete(thread.metadata.id);
+                            }
+                          }}
+                          onClick={() => setThreadToDelete(thread)}
+                          variant="ghost"
+                          size="sm"
+                          className="min-h-[36px] px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          aria-label={t.history.deleteThreadAria}
+                          title={t.history.deleteThreadAria}
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          <span className="sr-only">{t.history.deleteThreadAria}</span>
+                        </Button>
                       </div>
                     </div>
 
-                    {/* Actions Toolbar */}
-                    <div className="flex items-center gap-1.5 self-start shrink-0">
-                      <Button
-                        onClick={() => handleLoadToStudio(thread)}
-                        variant="outline"
-                        size="sm"
-                        className="min-h-[36px] px-3 text-xs font-medium"
-                        aria-label={`${t.history.loadToStudio}: ${thread.metadata.topic}`}
-                      >
-                        <ArrowUpRight className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
-                        {t.history.loadToStudio}
-                      </Button>
-                      <Button
-                        onClick={() => handleCopy(thread)}
-                        variant="ghost"
-                        size="sm"
-                        className="min-h-[36px] px-2.5 text-xs text-muted-foreground hover:text-foreground"
-                        aria-label={t.history.copyThreadAria}
-                      >
-                        <Copy className="h-4 w-4" aria-hidden="true" />
-                        <span className="sr-only">{t.history.copyThreadAria}</span>
-                      </Button>
-                      <Button
-                        ref={(el) => {
-                          if (el) {
-                            triggerButtonRefs.current.set(thread.metadata.id, el);
-                          } else {
-                            triggerButtonRefs.current.delete(thread.metadata.id);
-                          }
-                        }}
-                        onClick={() => setThreadToDelete(thread)}
-                        variant="ghost"
-                        size="sm"
-                        className="min-h-[36px] px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                        aria-label={t.history.deleteThreadAria}
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        <span className="sr-only">{t.history.deleteThreadAria}</span>
-                      </Button>
+                    {/* Format & Style Badges */}
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        {thread.metadata.format === "single"
+                          ? t.common.singleTweet
+                          : t.common.thread}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs font-normal">
+                        {t.options.styles[thread.metadata.style] ||
+                          thread.metadata.style}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs font-normal">
+                        {t.options.tones[thread.metadata.tone] ||
+                          thread.metadata.tone}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs font-normal">
+                        {t.options.languages[thread.metadata.language] ||
+                          thread.metadata.language}
+                      </Badge>
                     </div>
-                  </div>
 
-                  {/* Format & Style Badges */}
-                  <div className="flex flex-wrap gap-1.5">
-                    <Badge variant="secondary" className="text-xs font-normal">
-                      {thread.metadata.format === "single"
-                        ? t.common.singleTweet
-                        : t.common.thread}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs font-normal">
-                      {t.options.styles[thread.metadata.style] ||
-                        thread.metadata.style}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs font-normal">
-                      {t.options.tones[thread.metadata.tone] ||
-                        thread.metadata.tone}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs font-normal">
-                      {t.options.languages[thread.metadata.language] ||
-                        thread.metadata.language}
-                    </Badge>
-                  </div>
+                    {/* Tweet Preview (Collapsed) or Full Tweets (Expanded) */}
+                    {thread.tweets && thread.tweets.length > 0 && (
+                      <div className="space-y-3">
+                        {isExpanded ? (
+                          <div className="space-y-2.5 pt-1">
+                            {thread.tweets.map((tweet, idx) => (
+                              <div
+                                key={tweet.id || idx}
+                                className="rounded-lg border bg-muted/20 p-3.5 text-xs sm:text-sm text-foreground/90 leading-relaxed font-normal space-y-2"
+                              >
+                                <div className="flex items-center justify-between text-xs text-muted-foreground font-mono">
+                                  <span className="font-semibold">
+                                    {String(tweet.order || idx + 1).padStart(2, "0")} / {String(thread.totalTweets).padStart(2, "0")}
+                                  </span>
+                                  <span>
+                                    {tweet.charCount} {t.common.chars}
+                                  </span>
+                                </div>
+                                <p className="whitespace-pre-wrap">{tweet.content}</p>
+                                {tweet.hashtags && tweet.hashtags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 pt-1">
+                                    {tweet.hashtags.map((tag, tIdx) => (
+                                      <Badge
+                                        key={tIdx}
+                                        variant="secondary"
+                                        className="text-[10px] font-mono px-1.5 py-0"
+                                      >
+                                        #{tag}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="rounded-lg border bg-muted/30 p-3.5 text-xs sm:text-sm text-foreground/90 leading-relaxed font-normal">
+                            <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground font-semibold block mb-1">
+                              {t.history.firstTweetPreview}
+                            </span>
+                            <p className="line-clamp-3 whitespace-pre-wrap">
+                              {truncateText(thread.tweets[0]?.content || "", 240)}
+                            </p>
+                          </div>
+                        )}
 
-                  {/* Preview First Tweet */}
-                  {thread.tweets && thread.tweets.length > 0 && (
-                    <div className="rounded-lg border bg-muted/30 p-3.5 text-xs sm:text-sm text-foreground/90 leading-relaxed font-normal">
-                      <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground font-semibold block mb-1">
-                        {t.history.firstTweetPreview}
-                      </span>
-                      <p className="line-clamp-3 whitespace-pre-wrap">
-                        {truncateText(thread.tweets[0]?.content || "", 240)}
-                      </p>
-                    </div>
-                  )}
-                </article>
-              ))
+                        {thread.tweets.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleExpanded(thread.metadata.id)}
+                            className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground -ml-1"
+                          >
+                            {isExpanded ? (
+                              <>
+                                <ChevronUp className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+                                {t.history.hideAllTweets}
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+                                {t.history.showAllTweets(thread.totalTweets)}
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </article>
+                );
+              })
             ) : (
               /* Dual Empty States */
               <div className="rounded-xl border bg-card p-8 sm:p-12 text-center text-card-foreground">
@@ -350,11 +555,21 @@ export default function HistoryPage() {
                         Generated threads saved to your local storage will appear here for future reference and editing.
                       </p>
                     </div>
-                    <Link href="/" className="inline-block pt-1">
-                      <Button className="min-h-[44px] px-4 font-medium">
-                        {t.history.createFirstThread}
+                    <div className="flex items-center justify-center gap-2.5 pt-1 flex-wrap">
+                      <Link href="/">
+                        <Button className="min-h-[44px] px-4 font-medium">
+                          {t.history.createFirstThread}
+                        </Button>
+                      </Link>
+                      <Button
+                        onClick={() => fileInputRef.current?.click()}
+                        variant="outline"
+                        className="min-h-[44px] px-4 font-medium"
+                      >
+                        <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
+                        {t.history.import}
                       </Button>
-                    </Link>
+                    </div>
                   </div>
                 ) : (
                   <div className="max-w-md mx-auto space-y-3">

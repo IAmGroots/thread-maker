@@ -22,8 +22,8 @@ export const en: TranslationDictionary = {
   },
   header: {
     generator: "Generator",
-    savedLibrary: "Library",
-    savedLibraryShort: "Library",
+    savedLibrary: "Saved",
+    savedLibraryShort: "Saved",
     navAria: "Main Navigation",
     themeToggle: "Toggle theme",
     languageSwitch: "Switch language",
@@ -205,7 +205,7 @@ export const en: TranslationDictionary = {
     processing: "Adjusting Length...",
   },
   history: {
-    title: "Library Threads",
+    title: "Saved Threads",
     countSaved: (count: number) =>
       `${count} thread${count !== 1 ? "s" : ""} saved locally`,
     searchPlaceholder: "Search by topic, style, tone, or tweet content...",
@@ -223,6 +223,13 @@ export const en: TranslationDictionary = {
     firstTweetPreview: "First Tweet Preview",
     exportJson: "Export JSON",
     exportTxt: "Export TXT",
+    import: "Import",
+    importAria: "Import threads from JSON or TXT file",
+    downloadTxt: "Download TXT",
+    downloadJson: "Download JSON",
+    downloadAria: (topic: string) => `Download thread "${topic}"`,
+    showAllTweets: (count: number) => `View all ${count} tweets`,
+    hideAllTweets: "Hide tweets",
   },
   toasts: {
     success: "Success",
@@ -256,5 +263,11 @@ export const en: TranslationDictionary = {
     exported: "Exported",
     exportedJsonDesc: "Threads exported as JSON.",
     exportedTxtDesc: "Threads exported as TXT.",
+    imported: "Imported Successfully",
+    importedDesc: (count: number) =>
+      `Successfully imported ${count} thread${count > 1 ? "s" : ""} to storage.`,
+    importFailed: "Import Failed",
+    importFailedDesc:
+      "Unrecognized file format or corrupted file. Please provide a valid JSON or TXT file.",
   },
 };

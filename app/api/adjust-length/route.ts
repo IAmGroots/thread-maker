@@ -1,37 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateCompletion, parseJSONResponse } from "@/lib/ai/client";
-import { SYSTEM_PROMPT, buildAdjustLengthPrompt } from "@/lib/ai/prompts";
-import { AdjustLengthRequest } from "@/types/generator";
+import { SYSTEM_PROMPT_MICRO, buildAdjustLengthPrompt } from "@/lib/ai/prompts";
+import { validateAIConfig } from "@/config/ai-provider";
+import { adjustLengthRequestSchema } from "@/lib/validations/generator";
 import { countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
   try {
-    const body: AdjustLengthRequest & { tweetContent: string } =
-      await request.json();
-    const { tweetContent, direction } = body;
-
-    if (!tweetContent || !direction) {
+    const configValidation = validateAIConfig();
+    if (!configValidation.valid) {
       return NextResponse.json(
-        { success: false, error: "Tweet content and direction are required" },
+        { success: false, error: configValidation.error },
+        { status: 500 },
+      );
+    }
+
+    const rawBody = await request.json();
+    const validationResult = adjustLengthRequestSchema.safeParse(rawBody);
+    if (!validationResult.success) {
+      const errorMsg = validationResult.error.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join(", ");
+      return NextResponse.json(
+        { success: false, error: errorMsg },
         { status: 400 },
       );
     }
 
+    const { tweetContent, direction } = validationResult.data;
+
     // Build prompt for adjusting length
     const userPrompt = buildAdjustLengthPrompt(tweetContent, direction);
 
-    // Generate adjusted content
-    const response = await generateCompletion(SYSTEM_PROMPT, userPrompt);
+    // Generate adjusted content with lightweight micro prompt
+    const response = await generateCompletion(SYSTEM_PROMPT_MICRO, userPrompt);
 
     // Parse response
-    const parsed = parseJSONResponse<{ content: string }>(response);
+    const parsed = parseJSONResponse<unknown>(response);
+    let extractedContent = "";
+    if (typeof parsed === "string") {
+      extractedContent = parsed;
+    } else if (parsed && typeof parsed === "object") {
+      const obj = parsed as Record<string, unknown>;
+      extractedContent =
+        (typeof obj.content === "string" && obj.content) ||
+        (typeof obj.text === "string" && obj.text) ||
+        (typeof obj.tweet === "string" && obj.tweet) ||
+        "";
+    }
+
+    if (!extractedContent) {
+      throw new Error("Invalid response format from AI");
+    }
 
     // Process tweet
     const processedTweet = {
-      content: parsed.content,
-      charCount: countTwitterChars(parsed.content),
-      hasEmoji: hasEmojis(parsed.content),
-      hashtags: extractHashtags(parsed.content),
+      content: extractedContent,
+      charCount: countTwitterChars(extractedContent),
+      hasEmoji: hasEmojis(extractedContent),
+      hashtags: extractHashtags(extractedContent),
     };
 
     return NextResponse.json({

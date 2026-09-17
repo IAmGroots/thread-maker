@@ -205,7 +205,7 @@ export const id: TranslationDictionary = {
     processing: "Menyesuaikan Panjang...",
   },
   history: {
-    title: "Perpustakaan Threads",
+    title: "Threads Tersimpan",
     countSaved: (count: number) => `${count} thread tersimpan secara lokal`,
     searchPlaceholder: "Cari berdasarkan topik, gaya, nada, atau isi tweet...",
     clearSearch: "Hapus kueri pencarian",
@@ -222,6 +222,13 @@ export const id: TranslationDictionary = {
     firstTweetPreview: "Pratinjau Tweet Pertama",
     exportJson: "Ekspor JSON",
     exportTxt: "Ekspor TXT",
+    import: "Impor",
+    importAria: "Impor thread dari file JSON atau TXT",
+    downloadTxt: "Unduh TXT",
+    downloadJson: "Unduh JSON",
+    downloadAria: (topic: string) => `Unduh thread "${topic}"`,
+    showAllTweets: (count: number) => `Lihat semua ${count} tweet`,
+    hideAllTweets: "Sembunyikan tweet",
   },
   toasts: {
     success: "Berhasil",
@@ -257,5 +264,11 @@ export const id: TranslationDictionary = {
     exported: "Diekspor",
     exportedJsonDesc: "Thread diekspor sebagai JSON.",
     exportedTxtDesc: "Thread diekspor sebagai TXT.",
+    imported: "Berhasil Diimpor",
+    importedDesc: (count: number) =>
+      `Berhasil mengimpor ${count} thread ke penyimpanan.`,
+    importFailed: "Gagal Mengimpor",
+    importFailedDesc:
+      "Format file tidak dikenali atau file rusak. Pastikan file berupa JSON atau TXT yang valid.",
   },
 };

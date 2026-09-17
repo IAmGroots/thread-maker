@@ -471,9 +471,9 @@ export default function Home() {
     <>
       <Header />
       <main className="min-h-screen bg-background text-foreground">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
+        <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
           {/* Masthead */}
-          <div className="mb-6 sm:mb-8 pb-4 border-b">
+          <div className="mb-6 pb-4 border-b">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {t.composer.title}
             </h1>
@@ -483,7 +483,7 @@ export default function Home() {
           </div>
 
           {/* Editorial Workbench Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left Column: Composer */}
             <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-6">
               <div className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm space-y-4">

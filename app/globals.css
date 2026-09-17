@@ -4,56 +4,91 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 72.2% 50.6%;
-    --destructive-foreground: 0 0% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 98%;
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    /* ===== BASE — kertas cream hangat ===== */
+    --background: 40 33% 97%;       /* #F8F6F1 */
+    --foreground: 30 10% 15%;       /* #2B2724 */
+
+    --card: 40 40% 99%;             /* #FDFCFA — "kertas di atas kertas" */
+    --card-foreground: 30 10% 15%;
+    --popover: 40 40% 99%;
+    --popover-foreground: 30 10% 15%;
+
+    /* ===== PRIMARY — teal-biru tinta (versi gelap dari Sky Mist) ===== */
+    --primary: 200 55% 35%;         /* #285E6F */
+    --primary-foreground: 40 40% 98%;
+
+    /* ===== SECONDARY — biru sangat lembut ===== */
+    --secondary: 195 45% 92%;       /* #E3EFF2 */
+    --secondary-foreground: 200 55% 22%;
+
+    /* ===== MUTED — netral hangat ===== */
+    --muted: 40 25% 93%;            /* #EFEAE0 */
+    --muted-foreground: 30 8% 42%;  /* #6E6862 */
+
+    /* ===== ACCENT — Sky Mist (pilihanmu) ===== */
+    --accent: 195 45% 80%;          /* #BDDDE7 */
+    --accent-foreground: 200 55% 22%; /* #1A4A57 — teal tua */
+
+    /* ===== STATUS — earthy, tidak neon ===== */
+    --destructive: 0 55% 45%;       /* #B23434 — merah bata */
+    --destructive-foreground: 40 33% 97%;
+
+    --warning: 35 75% 45%;          /* #C9821F — ochre */
+    --warning-foreground: 40 33% 97%;
+
+    --success: 145 40% 32%;         /* #316B4A — hijau botol */
+    --success-foreground: 40 33% 97%;
+
+    --info: 200 55% 45%;            /* #3478A8 */
+    --info-foreground: 40 33% 97%;
+
+    /* ===== BORDER & RING ===== */
+    --border: 35 15% 82%;           /* #D6D0C5 — seperti garis pensil */
+    --input: 35 15% 82%;
+    --ring: 195 55% 50%;            /* #3DA5C4 — Sky Mist lebih tegas */
+
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 90.6% 70.8%;
-    --destructive-foreground: 240 10% 3.9%;
-    --warning: 45 93% 47%;
-    --warning-foreground: 240 10% 3.9%;
-    --success: 142 69% 58%;
-    --success-foreground: 240 10% 3.9%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    /* Base — navy gelap, terasa seperti langit malam */
+    --background: 222 25% 8%;        /* #0F1419 — hampir hitam tapi navy */
+    --foreground: 40 20% 92%;        /* #EFEBE4 — krem lembut */
+  
+    --card: 222 22% 11%;             /* #161C22 — card lebih terang */
+    --card-foreground: 40 20% 92%;
+    --popover: 222 22% 11%;
+    --popover-foreground: 40 20% 92%;
+  
+    /* Primary — Sky Mist cerah, seperti bulan */
+    --primary: 195 60% 72%;          /* #8FD4E5 */
+    --primary-foreground: 222 25% 8%;
+  
+    --secondary: 222 20% 18%;        /* #232A32 */
+    --secondary-foreground: 40 20% 92%;
+  
+    --muted: 222 18% 16%;            /* #1F252C */
+    --muted-foreground: 40 12% 65%;  /* #ACA79B */
+  
+    /* Accent — Sky Mist versi dark, TETAP biru muda */
+    --accent: 195 35% 28%;           /* #2E5661 */
+    --accent-foreground: 195 70% 88%; /* #C7E8EF */
+  
+    --destructive: 0 65% 65%;        /* #E67676 */
+    --destructive-foreground: 222 25% 8%;
+  
+    --warning: 38 80% 65%;           /* #E8B860 */
+    --warning-foreground: 222 25% 8%;
+  
+    --success: 145 50% 60%;          /* #6BC791 */
+    --success-foreground: 222 25% 8%;
+  
+    --info: 200 65% 65%;             /* #75C2DC */
+    --info-foreground: 222 25% 8%;
+  
+    --border: 222 20% 20%;           /* #28303A */
+    --input: 222 20% 20%;
+    --ring: 195 60% 72%;
   }
 }
 
@@ -63,5 +98,25 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: var(--radius);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+
+  /* Dukungan untuk Firefox */
+  * {
+    scrollbar-color: hsl(var(--border)) hsl(var(--background));
   }
 }

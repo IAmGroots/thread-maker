@@ -1,9 +1,107 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateCompletion, parseJSONResponse } from "@/lib/ai/client";
 import { SYSTEM_PROMPT, buildUserPrompt } from "@/lib/ai/prompts";
-import { GenerateRequest, GenerateResponse } from "@/types/generator";
+import { GenerateResponse } from "@/types/generator";
 import { validateAIConfig } from "@/config/ai-provider";
+import { generateRequestSchema } from "@/lib/validations/generator";
 import { countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
+
+interface RawTweet {
+  content?: string;
+  text?: string;
+  tweet?: string;
+  order?: number;
+}
+
+function extractTweetContent(raw: unknown): string {
+  if (typeof raw === "string") return raw;
+  if (raw && typeof raw === "object") {
+    const obj = raw as RawTweet;
+    if (typeof obj.content === "string") return obj.content;
+    if (typeof obj.text === "string") return obj.text;
+    if (typeof obj.tweet === "string") return obj.tweet;
+  }
+  return "";
+}
+
+function normalizeTweetsList(rawList: unknown[]): Array<{ content: string; order: number }> {
+  return rawList
+    .map((item, idx) => {
+      const content = extractTweetContent(item);
+      const order =
+        item && typeof item === "object" && typeof (item as RawTweet).order === "number"
+          ? (item as RawTweet).order!
+          : idx + 1;
+      return { content, order };
+    })
+    .filter((t) => t.content.trim().length > 0)
+    .sort((a, b) => a.order - b.order);
+}
+
+function normalizeAIResponse(
+  parsed: unknown,
+): Array<{ tweets: Array<{ content: string; order: number }> }> {
+  if (!parsed) return [];
+
+  // Object variations
+  if (typeof parsed === "object" && !Array.isArray(parsed)) {
+    const obj = parsed as Record<string, unknown>;
+
+    // Case: { threads: [...] } or { versions: [...] } or { results: [...] } or { data: [...] }
+    const wrapperList = obj.threads || obj.versions || obj.results || obj.data;
+    if (Array.isArray(wrapperList)) {
+      return normalizeAIResponse(wrapperList);
+    }
+
+    // Case: { tweets: [...] }
+    if (Array.isArray(obj.tweets)) {
+      const normalizedTweets = normalizeTweetsList(obj.tweets);
+      if (normalizedTweets.length > 0) {
+        return [{ tweets: normalizedTweets }];
+      }
+    }
+
+    // Case: Single tweet object { content: "...", order: 1 }
+    const singleContent = extractTweetContent(obj);
+    if (singleContent) {
+      return [{ tweets: [{ content: singleContent, order: 1 }] }];
+    }
+  }
+
+  // Array variations
+  if (Array.isArray(parsed)) {
+    // Array of version objects containing .tweets: [{ tweets: [...] }, ...]
+    const hasVersionsWithTweets = parsed.some(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        Array.isArray((item as Record<string, unknown>).tweets),
+    );
+
+    if (hasVersionsWithTweets) {
+      return parsed
+        .map((version) => {
+          if (!version || typeof version !== "object") return null;
+          const tweetsRaw = (version as Record<string, unknown>).tweets;
+          if (!Array.isArray(tweetsRaw)) return null;
+          const tweets = normalizeTweetsList(tweetsRaw);
+          return tweets.length > 0 ? { tweets } : null;
+        })
+        .filter(
+          (v): v is { tweets: Array<{ content: string; order: number }> } =>
+            v !== null,
+        );
+    }
+
+    // Array of tweets directly: [{ content: "...", order: 1 }, ...]
+    const normalizedTweets = normalizeTweetsList(parsed);
+    if (normalizedTweets.length > 0) {
+      return [{ tweets: normalizedTweets }];
+    }
+  }
+
+  return [];
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,24 +114,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse request body
-    const body: GenerateRequest = await request.json();
-    const { config } = body;
-
-    // Validate request
-    if (!config.topic || config.topic.trim().length === 0) {
+    // Parse and validate request body with Zod
+    const rawBody = await request.json();
+    const validationResult = generateRequestSchema.safeParse(rawBody);
+    if (!validationResult.success) {
+      const errorMsg = validationResult.error.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join(", ");
       return NextResponse.json(
-        { success: false, error: "Topic is required" },
+        { success: false, error: errorMsg },
         { status: 400 },
       );
     }
-
-    if (config.language && config.language !== "id" && config.language !== "en") {
-      return NextResponse.json(
-        { success: false, error: "Language must be either 'id' or 'en'" },
-        { status: 400 },
-      );
-    }
+    const { config } = validationResult.data;
 
     // Build prompts
     const systemPrompt = SYSTEM_PROMPT;
@@ -43,35 +136,19 @@ export async function POST(request: NextRequest) {
     const response = await generateCompletion(systemPrompt, userPrompt);
 
     // Parse response
-    const parsed =
-      parseJSONResponse<
-        Array<{ tweets: Array<{ content: string; order: number }> }>
-      >(response);
+    const parsedRaw = parseJSONResponse<unknown>(response);
 
-    // Validate and process response
-    if (!Array.isArray(parsed) || parsed.length === 0) {
+    // Normalize AI response to handle all variations
+    const normalizedVersions = normalizeAIResponse(parsedRaw);
+
+    if (normalizedVersions.length === 0) {
       throw new Error("Invalid response format from AI");
     }
 
     // Process each version
-    const threads = parsed.map((version) => {
-      if (!version.tweets || !Array.isArray(version.tweets)) {
-        throw new Error("Invalid tweets structure in response");
-      }
-
-      // Sort tweets by order
-      const sortedTweets = version.tweets.sort((a, b) => a.order - b.order);
-
-      // Process each tweet
-      const processedTweets = sortedTweets.map((tweet) => {
+    const threads = normalizedVersions.map((version) => {
+      const processedTweets = version.tweets.map((tweet) => {
         const charCount = countTwitterChars(tweet.content);
-
-        // Validate length
-        if (charCount > 280) {
-          console.warn(
-            `Tweet ${tweet.order} exceeds 280 characters (${charCount})`,
-          );
-        }
 
         return {
           content: tweet.content,

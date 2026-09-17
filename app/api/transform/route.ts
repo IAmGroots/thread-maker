@@ -1,40 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateCompletion, parseJSONResponse } from "@/lib/ai/client";
-import { SYSTEM_PROMPT, buildTransformPrompt } from "@/lib/ai/prompts";
-import { TransformStyleRequest } from "@/types/generator";
+import { SYSTEM_PROMPT_MICRO, buildTransformPrompt } from "@/lib/ai/prompts";
+import { validateAIConfig } from "@/config/ai-provider";
+import { transformRequestSchema } from "@/lib/validations/generator";
 import { countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
   try {
-    const body: TransformStyleRequest & { tweets: string[] } =
-      await request.json();
-    const { tweets, newStyle, newTone } = body;
-
-    if (!Array.isArray(tweets) || tweets.length === 0) {
+    const configValidation = validateAIConfig();
+    if (!configValidation.valid) {
       return NextResponse.json(
-        { success: false, error: "Tweets array is required" },
+        { success: false, error: configValidation.error },
+        { status: 500 },
+      );
+    }
+
+    const rawBody = await request.json();
+    const validationResult = transformRequestSchema.safeParse(rawBody);
+    if (!validationResult.success) {
+      const errorMsg = validationResult.error.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join(", ");
+      return NextResponse.json(
+        { success: false, error: errorMsg },
         { status: 400 },
       );
     }
 
+    const { tweets, newStyle, newTone } = validationResult.data;
+
     // Build prompt for transforming
     const userPrompt = buildTransformPrompt(tweets, newStyle, newTone);
 
-    // Generate transformed content
-    const response = await generateCompletion(SYSTEM_PROMPT, userPrompt);
+    // Generate transformed content with lightweight micro prompt
+    const response = await generateCompletion(SYSTEM_PROMPT_MICRO, userPrompt);
 
     // Parse response
-    const parsed =
-      parseJSONResponse<Array<{ content: string; order: number }>>(response);
+    const parsed = parseJSONResponse<unknown>(response);
+
+    let rawList: Array<{ content?: string; text?: string; order?: number }> = [];
+    if (Array.isArray(parsed)) {
+      rawList = parsed;
+    } else if (parsed && typeof parsed === "object") {
+      const obj = parsed as Record<string, unknown>;
+      if (Array.isArray(obj.tweets)) {
+        rawList = obj.tweets;
+      }
+    }
+
+    if (rawList.length === 0) {
+      throw new Error("Invalid response format from AI");
+    }
 
     // Process tweets
-    const processedTweets = parsed.map((tweet) => ({
-      content: tweet.content,
-      order: tweet.order,
-      charCount: countTwitterChars(tweet.content),
-      hasEmoji: hasEmojis(tweet.content),
-      hashtags: extractHashtags(tweet.content),
-    }));
+    const processedTweets = rawList.map((tweet, index) => {
+      const content = tweet.content || tweet.text || "";
+      const order = typeof tweet.order === "number" ? tweet.order : index + 1;
+      return {
+        content,
+        order,
+        charCount: countTwitterChars(content),
+        hasEmoji: hasEmojis(content),
+        hashtags: extractHashtags(content),
+      };
+    });
 
     return NextResponse.json({
       success: true,

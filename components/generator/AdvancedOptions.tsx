@@ -145,6 +145,7 @@ export function AdvancedOptions({
           <Label htmlFor="targetAudience">{t.composer.targetAudience}</Label>
           <Input
             id="targetAudience"
+            className="text-sm"
             placeholder={t.composer.targetAudiencePlaceholder}
             value={targetAudience}
             onChange={(e) => onTargetAudienceChange(e.target.value)}

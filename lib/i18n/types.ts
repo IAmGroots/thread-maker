@@ -149,6 +149,13 @@ export interface TranslationDictionary {
     firstTweetPreview: string;
     exportJson: string;
     exportTxt: string;
+    import: string;
+    importAria: string;
+    downloadTxt: string;
+    downloadJson: string;
+    downloadAria: (topic: string) => string;
+    showAllTweets: (count: number) => string;
+    hideAllTweets: string;
   };
   toasts: {
     success: string;
@@ -179,5 +186,9 @@ export interface TranslationDictionary {
     exported: string;
     exportedJsonDesc: string;
     exportedTxtDesc: string;
+    imported: string;
+    importedDesc: (count: number) => string;
+    importFailed: string;
+    importFailedDesc: string;
   };
 }

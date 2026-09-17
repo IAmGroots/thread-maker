@@ -1,20 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateCompletion, parseJSONResponse } from "@/lib/ai/client";
-import { SYSTEM_PROMPT, buildRegenerateTweetPrompt } from "@/lib/ai/prompts";
-import { RegenerateTweetRequest } from "@/types/generator";
+import { SYSTEM_PROMPT_MICRO, buildRegenerateTweetPrompt } from "@/lib/ai/prompts";
+import { validateAIConfig } from "@/config/ai-provider";
+import { regenerateTweetRequestSchema } from "@/lib/validations/generator";
 import { countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
   try {
-    const body: RegenerateTweetRequest = await request.json();
-    const { tweetIndex, context } = body;
-
-    if (tweetIndex === undefined || !Array.isArray(context)) {
+    const configValidation = validateAIConfig();
+    if (!configValidation.valid) {
       return NextResponse.json(
-        { success: false, error: "Invalid request parameters" },
+        { success: false, error: configValidation.error },
+        { status: 500 },
+      );
+    }
+
+    const rawBody = await request.json();
+    const validationResult = regenerateTweetRequestSchema.safeParse(rawBody);
+    if (!validationResult.success) {
+      const errorMsg = validationResult.error.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join(", ");
+      return NextResponse.json(
+        { success: false, error: errorMsg },
         { status: 400 },
       );
     }
+
+    const { tweetIndex, context } = validationResult.data;
 
     // Build prompt for regenerating single tweet
     const userPrompt = buildRegenerateTweetPrompt(
@@ -24,23 +37,41 @@ export async function POST(request: NextRequest) {
       {}, // You can pass config if needed
     );
 
-    // Generate new tweet
-    const response = await generateCompletion(SYSTEM_PROMPT, userPrompt);
+    // Generate new tweet with lightweight micro prompt
+    const response = await generateCompletion(SYSTEM_PROMPT_MICRO, userPrompt);
 
     // Parse response
-    const parsed = parseJSONResponse<{ content: string; order: number }>(
-      response,
-    );
+    const parsed = parseJSONResponse<unknown>(response);
+    let extractedContent = "";
+    let order = tweetIndex + 1;
+
+    if (typeof parsed === "string") {
+      extractedContent = parsed;
+    } else if (parsed && typeof parsed === "object") {
+      const obj = parsed as Record<string, unknown>;
+      extractedContent =
+        (typeof obj.content === "string" && obj.content) ||
+        (typeof obj.text === "string" && obj.text) ||
+        (typeof obj.tweet === "string" && obj.tweet) ||
+        "";
+      if (typeof obj.order === "number") {
+        order = obj.order;
+      }
+    }
+
+    if (!extractedContent) {
+      throw new Error("Invalid response format from AI");
+    }
 
     // Process tweet
-    const charCount = countTwitterChars(parsed.content);
+    const charCount = countTwitterChars(extractedContent);
 
     const processedTweet = {
-      content: parsed.content,
-      order: parsed.order,
+      content: extractedContent,
+      order,
       charCount,
-      hasEmoji: hasEmojis(parsed.content),
-      hashtags: extractHashtags(parsed.content),
+      hasEmoji: hasEmojis(extractedContent),
+      hashtags: extractHashtags(extractedContent),
     };
 
     return NextResponse.json({
