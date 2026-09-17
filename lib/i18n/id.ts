@@ -1,0 +1,261 @@
+import { TranslationDictionary } from "./types";
+
+export const id: TranslationDictionary = {
+  common: {
+    chars: "karakter",
+    charsEntered: (count: number) => `${count} karakter dimasukkan`,
+    tweets: (count: number) => `${count} tweet`,
+    singleTweet: "Tweet Tunggal",
+    thread: "Thread",
+    cancel: "Batal",
+    save: "Simpan",
+    delete: "Hapus",
+    edit: "Edit",
+    copy: "Salin",
+    regen: "Buat Ulang",
+    export: "Ekspor",
+    add: "Tambah",
+    show: "Tampilkan",
+    hide: "Sembunyikan",
+    close: "Tutup",
+    apply: "Terapkan",
+  },
+  header: {
+    generator: "Generator",
+    savedLibrary: "Tersimpan",
+    savedLibraryShort: "Tersimpan",
+    navAria: "Navigasi Utama",
+    themeToggle: "Ganti tema",
+    languageSwitch: "Ganti bahasa antarmuka",
+    languageName: "Bahasa Indonesia",
+  },
+  composer: {
+    title: "Gaya kamu. Nada kamu. Thread kamu.",
+    subtitle:
+      "Susun dan sesuaikan thread dengan parameter gaya, nada, dan panjang yang terstruktur.",
+    topicLabel: "Tentang apa yang ingin Anda tulis?",
+    topicPlaceholder:
+      "Masukkan topik atau ide Anda di sini...\ncontoh: 'Tips meningkatkan produktivitas developer' atau 'Masa depan kecerdasan buatan dalam kehidupan sehari-hari'",
+    topicDescription:
+      "Tuliskan topik secara spesifik dan jelas sebagai panduan pembuatan thread.",
+    topicErrorRequired: "Topik harus diisi",
+    toneAndStyle: "Nada & Gaya",
+    writingStyle: "Gaya Penulisan",
+    writingStylePlaceholder: "Pilih gaya penulisan",
+    tone: "Nada",
+    tonePlaceholder: "Pilih nada",
+    advancedOptions: "Opsi Lanjutan",
+    composeButton: "Susun Thread",
+    composingButton: "Menyusun Thread...",
+    parameters: "Parameter",
+    contentLanguage: "Bahasa Konten",
+    contentGoal: "Tujuan Konten",
+    targetAudience: "Target Audiens",
+    targetAudiencePlaceholder: "contoh: Developer, Mahasiswa, Wirausahawan",
+    tweetLength: "Panjang Tweet",
+    numberOfTweets: "Jumlah Tweet",
+    singleTweetDesc: "Tweet tunggal",
+    threadWithTweetsDesc: (count: number) => `Thread berisi ${count} tweet`,
+    generateVersions: "Jumlah Versi",
+    versionAria: (count: number) => `${count} versi`,
+    versionsDesc: (count: number) =>
+      `Buat ${count} versi berbeda untuk dipilih`,
+    contentOptions: "Opsi Konten",
+    useHook: "Gunakan Hook",
+    useHookDesc: "Mulai dengan kalimat pembuka pemikat perhatian",
+    useCTA: "Tambahkan CTA",
+    useCTADesc: "Akhiri dengan ajakan bertindak yang jelas",
+    includeEmojis: "Sertakan Emoji",
+    includeEmojisDesc: "Tambahkan emoji relevan pada konten tweet",
+    includeHashtags: "Sertakan Tagar",
+    includeHashtagsDesc: "Tambahkan tagar untuk mempermudah penemuan",
+    customHashtags: "Tagar Kustom (Opsional)",
+    customHashtagsPlaceholder: "Tambah tagar (tanpa #)",
+  },
+  options: {
+    styles: {
+      professional: "Profesional",
+      casual: "Santai",
+      storytelling: "Bercerita",
+      educational: "Edukatif",
+      humorous: "Humor",
+      controversial: "Kontroversial",
+      persuasive: "Persuasif",
+      inspirational: "Inspiratif",
+      news: "Berita",
+    },
+    tones: {
+      friendly: "Ramah",
+      confident: "Percaya Diri",
+      witty: "Cerdas",
+      authoritative: "Berwibawa",
+      emotional: "Emosional",
+      casual: "Santai",
+      formal: "Formal",
+      sarcastic: "Sarkastik",
+    },
+    goals: {
+      engagement: "Interaksi",
+      "personal-branding": "Personal Branding",
+      education: "Edukasi",
+      promotion: "Promosi",
+      "follower-growth": "Pertumbuhan Pengikut",
+    },
+    languages: {
+      id: "Bahasa Indonesia",
+      en: "English",
+      both: "Multibahasa",
+    },
+    lengths: {
+      short: "Pendek",
+      medium: "Sedang",
+      long: "Panjang",
+    },
+  },
+  prompts: {
+    heading: "Mulai Draf Thread",
+    description:
+      "Pilih topik pembuka di bawah atau masukkan topik Anda sendiri di komposer untuk memulai.",
+    suggestedTopics: "Rekomendasi Topik",
+    items: [
+      {
+        category: "Tips Teknis",
+        topic:
+          "5 praktik kode bersih yang perlu diterapkan setiap software engineer sejak awal karier",
+      },
+      {
+        category: "Insight Industri",
+        topic:
+          "Mengapa arsitektur software modern mulai kembali mempertimbangkan pendekatan modular monolit",
+      },
+      {
+        category: "Studi Kasus",
+        topic:
+          "Bagaimana tim rekayasa kecil mengembangkan aplikasi web hingga 50.000 pengguna aktif",
+      },
+      {
+        category: "Tutorial Singkat",
+        topic:
+          "Panduan praktis integrasi pemeriksaan aksesibilitas otomatis pada pipeline build proyek web",
+      },
+    ],
+  },
+  skeleton: {
+    status: "Menyusun thread...",
+    description: "Menyusun tweet berdasarkan topik dan parameter Anda",
+    srOnly: "Sedang menyusun thread Anda, mohon tunggu.",
+  },
+  results: {
+    generatedThread: "Hasil Thread",
+    topic: "Topik",
+    summary: (tweets: number, chars: number) =>
+      `${tweets} tweet • ${chars} karakter`,
+    version: (version: number) => `Versi ${version}`,
+    copyAll: "Salin Semua",
+    save: "Simpan",
+    regenerate: "Buat Ulang",
+    transform: "Transformasi",
+    shorten: "Perpendek",
+    lengthen: "Perpanjang",
+    export: "Ekspor",
+    editTweetAria: (n: number) => `Edit konten untuk tweet ${n}`,
+    saveTweetAria: (n: number) => `Simpan perubahan untuk tweet ${n}`,
+    cancelTweetAria: (n: number) => `Batal mengedit tweet ${n}`,
+    editAria: (n: number) => `Edit tweet ${n}`,
+    regenAria: (n: number) => `Buat ulang tweet ${n}`,
+    copyAria: (n: number) => `Salin tweet ${n}`,
+    adjustLengthAria: (n: number) => `Sesuaikan panjang tweet ${n}`,
+    tweetOrderAria: (order: number, total: number) =>
+      `Tweet ${order} dari ${total}`,
+    charCountAria: (
+      count: number,
+      max: number,
+      status: "normal" | "approaching" | "over",
+    ) => {
+      if (status === "over") {
+        return `${count} dari ${max} karakter, batas terlampaui`;
+      }
+      if (status === "approaching") {
+        return `${count} dari ${max} karakter, mendekati batas`;
+      }
+      return `${count} dari ${max} karakter`;
+    },
+  },
+  transform: {
+    dialogTitle: "Transformasi Thread",
+    dialogDesc:
+      "Tulis ulang thread ini dengan gaya atau nada berbeda tanpa mengubah poin inti pembahasan.",
+    targetStyle: "Gaya Tujuan",
+    targetTone: "Nada Tujuan",
+    apply: "Terapkan Transformasi",
+    processing: "Mentransformasi Thread...",
+  },
+  adjustLength: {
+    dialogTitle: "Sesuaikan Panjang Tweet",
+    dialogDesc:
+      "Optimalkan panjang tweet agar lebih ringkas atau memberikan ruang penjelasan lebih luas.",
+    selectTweet: "Pilih Tweet",
+    selectTweetLabel: (index: number) => `Tweet ${index + 1}`,
+    direction: "Tujuan Penyesuaian",
+    shorten: "Perpendek",
+    shortenDesc: "Jadikan tweet ini lebih padat dan ringkas.",
+    lengthen: "Perpanjang",
+    lengthenDesc: "Berikan ruang tambahan untuk menguraikan ide.",
+    apply: "Terapkan Penyesuaian",
+    processing: "Menyesuaikan Panjang...",
+  },
+  history: {
+    title: "Perpustakaan Threads",
+    countSaved: (count: number) => `${count} thread tersimpan secara lokal`,
+    searchPlaceholder: "Cari berdasarkan topik, gaya, nada, atau isi tweet...",
+    clearSearch: "Hapus kueri pencarian",
+    deleteDialogTitle: "Hapus Thread",
+    deleteDialogDesc:
+      "Apakah Anda yakin ingin menghapus thread ini? Tindakan ini tidak dapat dibatalkan.",
+    noThreadsYet: "Belum ada thread yang tersimpan",
+    createFirstThread: "Buat Thread Pertama Anda",
+    noThreadsMatch: "Tidak ada thread yang cocok dengan pencarian",
+    copyThreadAria: "Salin thread ke clipboard",
+    deleteThreadAria: "Hapus thread",
+    loadToStudio: "Muat ke Studio",
+    loadToStudioAria: "Muat thread ini ke Composer",
+    firstTweetPreview: "Pratinjau Tweet Pertama",
+    exportJson: "Ekspor JSON",
+    exportTxt: "Ekspor TXT",
+  },
+  toasts: {
+    success: "Berhasil",
+    generatedSuccess: (count: number) =>
+      `Berhasil membuat ${count} versi thread.`,
+    generationFailed: "Gagal membuat thread",
+    saved: "Tersimpan",
+    savedDesc: "Thread tersimpan di penyimpanan lokal.",
+    saveFailed: "Gagal menyimpan",
+    saveFailedDesc: "Gagal menyimpan thread. Silakan coba lagi.",
+    tweetUpdated: "Tweet diperbarui",
+    tweetUpdatedDesc: "Perubahan Anda telah disimpan.",
+    regenerated: "Dibuat ulang",
+    regeneratedDesc: (index: number) =>
+      `Tweet ${index + 1} telah dibuat ulang.`,
+    regenerationFailed: "Gagal membuat ulang",
+    transformSuccess:
+      "Thread berhasil ditransformasi dengan gaya dan nada baru.",
+    transformFailed: "Gagal mentransformasi thread. Silakan coba lagi.",
+    adjustLengthSuccess: "Panjang tweet berhasil disesuaikan.",
+    adjustLengthFailed: "Gagal menyesuaikan panjang tweet. Silakan coba lagi.",
+    loadedToStudio: "Dimuat ke Studio",
+    loadedToStudioDesc:
+      "Konten thread dan parameter berhasil dimuat ke Composer.",
+    copied: "Disalin",
+    threadCopiedDesc: "Thread disalin ke clipboard. Siap dipublikasikan!",
+    singleTweetCopiedDesc: (order: number) =>
+      `Tweet ${order} disalin ke clipboard.`,
+    copyFailed: "Gagal menyalin",
+    copyFailedDesc: "Silakan coba lagi atau salin secara manual.",
+    deleted: "Dihapus",
+    deletedDesc: "Thread telah dihapus.",
+    exported: "Diekspor",
+    exportedJsonDesc: "Thread diekspor sebagai JSON.",
+    exportedTxtDesc: "Thread diekspor sebagai TXT.",
+  },
+};
