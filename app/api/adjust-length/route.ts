@@ -29,13 +29,10 @@ export async function POST(request: NextRequest) {
 
     const { tweetContent, direction } = validationResult.data;
 
-    // Build prompt for adjusting length
     const userPrompt = buildAdjustLengthPrompt(tweetContent, direction);
 
-    // Generate adjusted content with lightweight micro prompt
     const response = await generateCompletion(SYSTEM_PROMPT_MICRO, userPrompt);
 
-    // Parse response
     const parsed = parseJSONResponse<unknown>(response);
     let extractedContent = "";
     if (typeof parsed === "string") {
@@ -53,7 +50,6 @@ export async function POST(request: NextRequest) {
       throw new Error("Invalid response format from AI");
     }
 
-    // Process tweet
     const processedTweet = {
       content: extractedContent,
       charCount: countTwitterChars(extractedContent),

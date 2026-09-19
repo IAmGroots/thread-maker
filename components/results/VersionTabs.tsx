@@ -29,7 +29,7 @@ export function VersionTabs({
       className="w-full"
     >
       <div className="overflow-x-auto pb-1 scrollbar-none">
-        <TabsList className="w-full min-w-max sm:min-w-0 flex justify-start sm:justify-center h-10 p-1 bg-muted/80 rounded-lg">
+        <TabsList className="w-full min-w-max sm:min-w-0 flex justify-start sm:justify-center h-11 sm:h-10 p-1 bg-muted/80 rounded-lg">
           {Array.from({ length: versions }, (_, i) => (
             <TabsTrigger
               key={i}

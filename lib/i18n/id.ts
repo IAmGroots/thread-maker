@@ -21,6 +21,7 @@ export const id: TranslationDictionary = {
     apply: "Terapkan",
   },
   header: {
+    home: "Beranda",
     generator: "Generator",
     savedLibrary: "Tersimpan",
     savedLibraryShort: "Tersimpan",
@@ -29,10 +30,31 @@ export const id: TranslationDictionary = {
     languageSwitch: "Ganti bahasa antarmuka",
     languageName: "Bahasa Indonesia",
   },
+  landing: {
+    eyebrow: "Tulis di atas kertas, terbitkan sebagai thread",
+    title: "Susun thread sebelum kamu mempublikasikannya.",
+    description:
+      "Threvo adalah meja menulis yang tenang untuk thread. Tulis satu ide, rapikan tweet demi tweet, dan simpan draf yang layak dipakai ulang.",
+    primaryCta: "Buka composer",
+    secondaryCta: "Lihat thread tersimpan",
+    points: [
+      "Satu ide, beberapa versi untuk dibandingkan.",
+      "Edit dan buat ulang tweet demi tweet.",
+      "Simpan draf yang layak dipakai ulang.",
+    ],
+    sampleEyebrow: "Contoh thread",
+    sampleTopic: "Cara menulis thread yang dibaca sampai habis",
+    sampleTweets: [
+      "Kebanyakan thread kehilangan pembaca di tweet kedua. Bukan karena idenya lemah, tapi karena kalimat pertama menjanjikan hal yang tidak ditepati kalimat kedua.",
+      "Buka dengan ketegangan, bukan topik. \"Thread itu mudah\" adalah topik. \"Thread terakhirku cuma dapat 4 balasan karena aku sembunyikan intinya sampai tweet enam\" adalah ketegangan.",
+      "Lalu menangkan tiap gulir. Satu ide per tweet. Kalau satu tweet butuh satu paragraf penuh demi masuk akal, itu sebenarnya dua tweet.",
+      "Tutup dengan langkah berikutnya untuk pembaca: coba pada drafmu sendiri, atau simpan untuk nanti.",
+    ],
+  },
   composer: {
     title: "Ubah pemikiranmu menjadi thread.",
     subtitle:
-      "Mengubah ide-idemu menjadi thread dan postingan yang menarik, tanpa ribet, cukup dengan cara yang sederhana.",
+      "Tulis satu topik, dapatkan thread yang bisa diedit per tweet sebelum dipublikasikan.",
     topicLabel: "Tentang apa yang ingin Anda tulis?",
     topicPlaceholder:
       "Masukkan topik atau ide Anda di sini...\ncontoh: 'Tips meningkatkan produktivitas developer' atau 'Masa depan kecerdasan buatan dalam kehidupan sehari-hari'",
@@ -150,7 +172,7 @@ export const id: TranslationDictionary = {
     generatedThread: "Hasil Thread",
     topic: "Topik",
     summary: (tweets: number, chars: number) =>
-      `${tweets} tweet • ${chars} karakter`,
+      `${tweets} tweet, ${chars} karakter`,
     version: (version: number) => `Versi ${version}`,
     copyAll: "Salin Semua",
     save: "Simpan",
@@ -214,8 +236,10 @@ export const id: TranslationDictionary = {
     deleteDialogDesc:
       "Apakah Anda yakin ingin menghapus thread ini? Tindakan ini tidak dapat dibatalkan.",
     noThreadsYet: "Belum ada thread yang tersimpan",
+    emptyLibraryDesc: "Thread yang Anda simpan akan muncul di sini. Mulai satu di komposer untuk mengisi daftar ini.",
     createFirstThread: "Buat Thread Pertama Anda",
     noThreadsMatch: "Tidak ada thread yang cocok dengan pencarian",
+    noMatchDesc: (query: string) => `Tidak ada yang cocok dengan "${query}". Coba kata kunci lain, atau hapus pencarian.`,
     copyThreadAria: "Salin thread ke clipboard",
     deleteThreadAria: "Hapus thread",
     loadToStudio: "Muat ke Studio",
@@ -233,7 +257,19 @@ export const id: TranslationDictionary = {
   },
   affiliate: {
     toggleTitle: "Affiliate Storytelling",
-    toggleSubtitle: "Sisipkan produk affiliate secara mengalir lewat cerita tanpa hard-selling",
+    toggleSubtitle: "Masukkan produk ke dalam cerita dengan menjelaskan masalah yang diselesaikannya, bukan dengan jualan langsung",
+    statusOn: "Aktif",
+    statusOff: "Nonaktif",
+    productLabel: "Produk:",
+    productBadge: "Link Produk",
+    detectedProduct: "Produk Terdeteksi",
+    copyLink: "Salin Link",
+    copied: "Disalin",
+    openLink: "Buka Link",
+    linkCopiedTitle: "Link Afiliasi Disalin",
+    keyPointsLimit: "Maks 5 poin",
+    tagPresetLabel: "Rekomendasi:",
+    autoFillTopic: (productName: string) => `Review & pengalaman pakai ${productName}`,
     productUrlLabel: "Link Produk (Shopee, Tokopedia, TikTok, dsb.)",
     productUrlPlaceholder: "https://link produk marketplace",
     fetchButton: "Ambil Data",

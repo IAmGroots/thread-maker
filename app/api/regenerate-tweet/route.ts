@@ -29,18 +29,15 @@ export async function POST(request: NextRequest) {
 
     const { tweetIndex, context } = validationResult.data;
 
-    // Build prompt for regenerating single tweet
     const userPrompt = buildRegenerateTweetPrompt(
       tweetIndex,
       context.length,
       context,
-      {}, // You can pass config if needed
+      {},
     );
 
-    // Generate new tweet with lightweight micro prompt
     const response = await generateCompletion(SYSTEM_PROMPT_MICRO, userPrompt);
 
-    // Parse response
     const parsed = parseJSONResponse<unknown>(response);
     let extractedContent = "";
     let order = tweetIndex + 1;
@@ -63,7 +60,6 @@ export async function POST(request: NextRequest) {
       throw new Error("Invalid response format from AI");
     }
 
-    // Process tweet
     const charCount = countTwitterChars(extractedContent);
 
     const processedTweet = {

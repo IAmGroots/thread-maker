@@ -88,13 +88,13 @@ export function ThreadPreview({
         {thread.metadata?.affiliate?.enabled && thread.metadata?.affiliate?.product?.productName && (
           <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/20 text-xs self-start sm:self-auto">
             <ShoppingBag className="h-3.5 w-3.5 text-primary shrink-0" />
-            <span className="text-muted-foreground">Produk:</span>
+            <span className="text-muted-foreground">{t.affiliate.productLabel}</span>
             <span className="font-medium text-foreground truncate max-w-[200px]">
               {thread.metadata.affiliate.product.productName}
             </span>
             {thread.metadata.affiliate.product.price && (
               <span className="text-muted-foreground font-mono text-[11px]">
-                • {thread.metadata.affiliate.product.price}
+                {thread.metadata.affiliate.product.price}
               </span>
             )}
           </div>
@@ -145,7 +145,6 @@ export function ThreadPreview({
         onRegenerateAll={onRegenerateAll}
         onSave={onSave}
         onTransform={onTransform}
-        // onAdjustLength={onAdjustLength}
         onExport={onExport}
         onCopyAll={handleCopyAll}
         isLoading={isLoading}

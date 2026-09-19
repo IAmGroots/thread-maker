@@ -76,7 +76,7 @@ export function CustomizationPanel({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
-    <div className="rounded-xl border bg-card p-5 space-y-4 text-card-foreground">
+    <div className="rounded-xl border bg-background p-5 space-y-4 text-card-foreground">
       <div>
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           {t.composer.toneAndStyle}

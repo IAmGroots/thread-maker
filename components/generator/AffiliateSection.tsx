@@ -161,7 +161,7 @@ export function AffiliateSection({
         });
 
         if (onAutoFillTopic && title && !product.productName) {
-          onAutoFillTopic(`Review & pengalaman pakai ${title}`);
+          onAutoFillTopic(t.affiliate.autoFillTopic(title));
         }
 
         toast({
@@ -215,7 +215,7 @@ export function AffiliateSection({
   const presets = ["#Ad", "#Affiliate", "#RacunShopee", "#SpillProduk"];
 
   return (
-    <div className="rounded-xl border bg-card p-5 text-card-foreground space-y-4">
+    <div className="rounded-xl border bg-background p-5 text-card-foreground space-y-4">
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2 mb-3">
@@ -227,10 +227,10 @@ export function AffiliateSection({
               {t.affiliate.toggleTitle}
             </Label>
             <Badge
-              variant="outline"
-              className="text-[10px] font-normal uppercase py-0 px-1.5"
+              variant={isEnabled ? "secondary" : "outline"}
+              className="text-[10px] font-normal py-0 px-1.5"
             >
-              Smart
+              {isEnabled ? t.affiliate.statusOn : t.affiliate.statusOff}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -343,7 +343,7 @@ export function AffiliateSection({
                   )}
                   <div className="min-w-0">
                     <p className="font-medium truncate text-foreground">
-                      {product.productName || "Produk Terdeteksi"}
+                      {product.productName || t.affiliate.detectedProduct}
                     </p>
                     {product.price && (
                       <p className="text-muted-foreground font-mono text-xs">
@@ -442,7 +442,7 @@ export function AffiliateSection({
                 {t.affiliate.keyPointsLabel}
               </Label>
               <span className="text-xs text-muted-foreground">
-                Max 5 poin
+                {t.affiliate.keyPointsLimit}
               </span>
             </div>
             <Textarea
@@ -550,7 +550,7 @@ export function AffiliateSection({
 
             <div className="flex items-center gap-1.5 flex-wrap pt-1">
               <span className="text-xs text-muted-foreground mr-1">
-                Rekomendasi:
+                {t.affiliate.tagPresetLabel}
               </span>
               {presets.map((preset) => {
                 const isSelected = currentTags.includes(preset);

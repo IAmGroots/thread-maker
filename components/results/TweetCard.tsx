@@ -55,7 +55,7 @@ export function TweetCard({
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
       toast({
-        title: "Link Afiliasi Disalin",
+        title: t.affiliate.linkCopiedTitle,
         description: targetAffiliateUrl,
       });
     }
@@ -109,7 +109,7 @@ export function TweetCard({
   const formattedOrder = `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
 
   return (
-    <article className="rounded-xl border bg-card p-4 sm:p-5 text-card-foreground shadow-sm space-y-3.5 transition-colors">
+    <article className="rounded-xl border bg-card p-4 sm:p-5 text-card-foreground space-y-3.5 transition-colors">
       {/* Top Header Row: Order (left) & Actions (right) */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ export function TweetCard({
               className="text-[10px] font-medium py-0 px-1.5 border-primary/40 text-primary bg-primary/5 gap-1"
             >
               <ShoppingBag className="h-3 w-3" />
-              Link Produk
+              {t.affiliate.productBadge}
             </Badge>
           )}
         </div>
@@ -137,8 +137,8 @@ export function TweetCard({
                 size="sm"
                 variant="ghost"
                 onClick={handleCopyAffiliateLink}
-                className="h-8 px-2 sm:px-2.5 text-xs text-primary hover:text-primary hover:bg-primary/10"
-                aria-label="Salin Link Afiliasi"
+                className="h-11 min-w-11 sm:h-8 sm:min-w-0 px-2 sm:px-2.5 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                aria-label={t.affiliate.copyLink}
               >
                 {copiedLink ? (
                   <Check className="h-3.5 w-3.5 sm:mr-1.5 text-green-500" aria-hidden="true" />
@@ -146,7 +146,7 @@ export function TweetCard({
                   <LinkIcon className="h-3.5 w-3.5 sm:mr-1.5" aria-hidden="true" />
                 )}
                 <span className="hidden sm:inline">
-                  {copiedLink ? "Disalin" : "Salin Link"}
+                  {copiedLink ? t.affiliate.copied : t.affiliate.copyLink}
                 </span>
               </Button>
             )}
@@ -156,7 +156,7 @@ export function TweetCard({
                 size="sm"
                 variant="ghost"
                 onClick={() => setIsEditing(true)}
-                className="h-8 px-2 sm:px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-11 min-w-11 sm:h-8 sm:min-w-0 px-2 sm:px-2.5 text-xs text-muted-foreground hover:text-foreground"
                 aria-label={t.results.editAria(index + 1)}
               >
                 <Edit2 className="h-3.5 w-3.5 sm:mr-1.5" aria-hidden="true" />
@@ -168,7 +168,7 @@ export function TweetCard({
                 size="sm"
                 variant="ghost"
                 onClick={onRegenerate}
-                className="h-8 px-2 sm:px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-11 min-w-11 sm:h-8 sm:min-w-0 px-2 sm:px-2.5 text-xs text-muted-foreground hover:text-foreground"
                 aria-label={t.results.regenAria(index + 1)}
               >
                 <RefreshCw
@@ -183,7 +183,7 @@ export function TweetCard({
                 size="sm"
                 variant="ghost"
                 onClick={onAdjustLength}
-                className="h-8 px-2 sm:px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-11 min-w-11 sm:h-8 sm:min-w-0 px-2 sm:px-2.5 text-xs text-muted-foreground hover:text-foreground"
                 aria-label={t.results.adjustLengthAria(index + 1)}
               >
                 <SlidersHorizontal
@@ -200,7 +200,7 @@ export function TweetCard({
                 size="sm"
                 variant="ghost"
                 onClick={onCopy}
-                className="h-8 px-2 sm:px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-11 min-w-11 sm:h-8 sm:min-w-0 px-2 sm:px-2.5 text-xs text-muted-foreground hover:text-foreground"
                 aria-label={t.results.copyAria(index + 1)}
               >
                 <Copy className="h-3.5 w-3.5 sm:mr-1.5" aria-hidden="true" />
@@ -228,7 +228,7 @@ export function TweetCard({
                 size="sm"
                 onClick={handleSave}
                 aria-label={t.results.saveTweetAria(index + 1)}
-                className="h-8 px-3 text-xs font-medium"
+                className="h-11 sm:h-8 px-3 text-xs font-medium"
               >
                 <Save className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
                 {t.common.save}
@@ -238,7 +238,7 @@ export function TweetCard({
                 variant="ghost"
                 onClick={handleCancel}
                 aria-label={t.results.cancelTweetAria(index + 1)}
-                className="h-8 px-3 text-xs text-muted-foreground hover:text-foreground"
+                className="h-11 sm:h-8 px-3 text-xs text-muted-foreground hover:text-foreground"
               >
                 {t.common.cancel}
               </Button>
@@ -284,7 +284,7 @@ export function TweetCard({
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
               <ShoppingBag className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Produk yang Disebut</span>
+              <span>{t.affiliate.productLabel}</span>
             </div>
             {affiliateProduct.price && (
               <span className="text-xs font-mono font-medium text-muted-foreground bg-background px-2 py-0.5 rounded border">
@@ -317,23 +317,23 @@ export function TweetCard({
                   size="sm"
                   variant="outline"
                   onClick={handleCopyAffiliateLink}
-                  className="h-8 px-2.5 text-xs font-medium gap-1.5"
+                  className="h-11 sm:h-8 px-2.5 text-xs font-medium gap-1.5"
                 >
                   {copiedLink ? (
                     <Check className="h-3.5 w-3.5 text-green-500" />
                   ) : (
                     <Copy className="h-3.5 w-3.5" />
                   )}
-                  <span>{copiedLink ? "Tersalin" : "Salin Link"}</span>
+                  <span>{copiedLink ? t.affiliate.copied : t.affiliate.copyLink}</span>
                 </Button>
                 <a
                   href={targetAffiliateUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center h-8 px-2.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors gap-1.5"
+                  className="inline-flex items-center justify-center h-11 sm:h-8 px-2.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors gap-1.5"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
-                  <span>Buka Link</span>
+                  <span>{t.affiliate.openLink}</span>
                 </a>
               </div>
             )}

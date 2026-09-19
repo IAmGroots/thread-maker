@@ -2,14 +2,12 @@ import "server-only";
 import OpenAI from "openai";
 import { AI_CONFIG } from "@/config/ai-provider";
 
-// Initialize OpenAI client with custom endpoint
 export const openai = new OpenAI({
   apiKey: AI_CONFIG.apiKey,
   baseURL: AI_CONFIG.endpoint,
   dangerouslyAllowBrowser: false, // Only use on server-side
 });
 
-// Generate completion
 export async function generateCompletion(
   systemPrompt: string,
   userPrompt: string,
@@ -34,28 +32,26 @@ export async function generateCompletion(
   }
 }
 
-// Parse JSON response safely
+// Models often wrap JSON in prose or a markdown fence, so fall through
+// the strategies below until one parses.
 export function parseJSONResponse<T>(response: string): T {
   const cleaned = response.trim();
 
-  // 1. Try parsing directly
   try {
     return JSON.parse(cleaned);
   } catch {
-    // continue to fallback extraction
+    // fall through to next strategy
   }
 
-  // 2. Try extracting from markdown code block (```json ... ``` or ``` ... ```)
   const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   if (codeBlockMatch && codeBlockMatch[1]) {
     try {
       return JSON.parse(codeBlockMatch[1].trim());
     } catch {
-      // continue to substring extraction
+      // fall through to substring extraction
     }
   }
 
-  // 3. Try finding first '[' or '{' to last ']' or '}'
   const firstBrace = cleaned.indexOf("{");
   const firstBracket = cleaned.indexOf("[");
 
@@ -77,7 +73,7 @@ export function parseJSONResponse<T>(response: string): T {
     try {
       return JSON.parse(candidate);
     } catch {
-      // 4. Try removing trailing commas before closing braces/brackets
+      // last resort: drop trailing commas the model sometimes leaves behind
       try {
         const sanitized = candidate.replace(/,\s*([}\]])/g, "$1");
         return JSON.parse(sanitized);

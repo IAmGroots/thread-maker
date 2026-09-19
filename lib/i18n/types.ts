@@ -21,6 +21,7 @@ export interface TranslationDictionary {
     apply: string;
   };
   header: {
+    home: string;
     generator: string;
     savedLibrary: string;
     savedLibraryShort: string;
@@ -28,6 +29,17 @@ export interface TranslationDictionary {
     themeToggle: string;
     languageSwitch: string;
     languageName: string;
+  };
+  landing: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    primaryCta: string;
+    secondaryCta: string;
+    points: string[];
+    sampleEyebrow: string;
+    sampleTopic: string;
+    sampleTweets: string[];
   };
   composer: {
     title: string;
@@ -140,8 +152,10 @@ export interface TranslationDictionary {
     deleteDialogTitle: string;
     deleteDialogDesc: string;
     noThreadsYet: string;
+    emptyLibraryDesc: string;
     createFirstThread: string;
     noThreadsMatch: string;
+    noMatchDesc: (query: string) => string;
     copyThreadAria: string;
     deleteThreadAria: string;
     loadToStudio: string;
@@ -160,6 +174,18 @@ export interface TranslationDictionary {
   affiliate: {
     toggleTitle: string;
     toggleSubtitle: string;
+    statusOn: string;
+    statusOff: string;
+    productLabel: string;
+    productBadge: string;
+    detectedProduct: string;
+    copyLink: string;
+    copied: string;
+    openLink: string;
+    linkCopiedTitle: string;
+    keyPointsLimit: string;
+    tagPresetLabel: string;
+    autoFillTopic: (productName: string) => string;
     productUrlLabel: string;
     productUrlPlaceholder: string;
     fetchButton: string;

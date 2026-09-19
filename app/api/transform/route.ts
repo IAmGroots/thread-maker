@@ -29,13 +29,10 @@ export async function POST(request: NextRequest) {
 
     const { tweets, newStyle, newTone } = validationResult.data;
 
-    // Build prompt for transforming
     const userPrompt = buildTransformPrompt(tweets, newStyle, newTone);
 
-    // Generate transformed content with lightweight micro prompt
     const response = await generateCompletion(SYSTEM_PROMPT_MICRO, userPrompt);
 
-    // Parse response
     const parsed = parseJSONResponse<unknown>(response);
 
     let rawList: Array<{ content?: string; text?: string; order?: number }> = [];
@@ -52,7 +49,6 @@ export async function POST(request: NextRequest) {
       throw new Error("Invalid response format from AI");
     }
 
-    // Process tweets
     const processedTweets = rawList.map((tweet, index) => {
       const content = tweet.content || tweet.text || "";
       const order = typeof tweet.order === "number" ? tweet.order : index + 1;

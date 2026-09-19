@@ -64,7 +64,7 @@ Turn your thoughts into threads. Generate viral tweets and threads with AI. Buil
    # Branding
    NEXT_PUBLIC_APP_NAME=Threvo
    NEXT_PUBLIC_APP_TAGLINE=Turn your thoughts into threads.
-   NEXT_PUBLIC_APP_DESCRIPTION=Threvo turns your ideas into engaging threads and posts, no hassle, just simplicity.
+   NEXT_PUBLIC_APP_DESCRIPTION=Threvo turns your ideas into threads and posts you can edit before you post them.
    NEXT_PUBLIC_APP_SHORT_DESCRIPTION=A simple way to turn ideas into great threads.
 
    # Storage

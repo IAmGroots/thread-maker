@@ -97,7 +97,7 @@ export function TransformDialog({
               onValueChange={(val) => setSelectedStyle(val as WritingStyle)}
               disabled={isLoading}
             >
-              <SelectTrigger id="transform-style" className="min-h-[40px]">
+              <SelectTrigger id="transform-style" className="min-h-[44px]">
                 <SelectValue>
                   {t.options.styles[selectedStyle] ||
                     WRITING_STYLE_LABELS[selectedStyle]}
@@ -120,7 +120,7 @@ export function TransformDialog({
               onValueChange={(val) => setSelectedTone(val as Tone)}
               disabled={isLoading}
             >
-              <SelectTrigger id="transform-tone" className="min-h-[40px]">
+              <SelectTrigger id="transform-tone" className="min-h-[44px]">
                 <SelectValue>
                   {t.options.tones[selectedTone] || TONE_LABELS[selectedTone]}
                 </SelectValue>
@@ -142,7 +142,7 @@ export function TransformDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
-            className="min-h-[40px]"
+            className="min-h-[44px]"
           >
             {t.common.cancel}
           </Button>
@@ -150,7 +150,7 @@ export function TransformDialog({
             type="button"
             onClick={handleApply}
             disabled={isLoading}
-            className="min-h-[40px]"
+            className="min-h-[44px]"
           >
             {isLoading ? (
               <>

@@ -45,6 +45,15 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  async redirects() {
+    return [
+      {
+        source: "/history",
+        destination: "/saved",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

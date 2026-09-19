@@ -10,7 +10,7 @@ export function LanguageSwitcher() {
     <div
       role="group"
       aria-label={t.header.languageSwitch}
-      className="inline-flex items-center rounded-md border border-input bg-background p-0.5 text-xs font-medium"
+      className="inline-flex items-center rounded-md border border-input bg-background p-0.5 gap-0.5 text-xs font-medium"
     >
       <button
         type="button"
@@ -18,7 +18,7 @@ export function LanguageSwitcher() {
         aria-pressed={locale === "en"}
         aria-label="English"
         className={cn(
-          "rounded px-2.5 py-1 min-h-[36px] min-w-[34px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "rounded px-2.5 min-h-[44px] min-w-[44px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           locale === "en"
             ? "bg-secondary text-foreground font-semibold"
             : "text-muted-foreground hover:text-foreground"
@@ -32,7 +32,7 @@ export function LanguageSwitcher() {
         aria-pressed={locale === "id"}
         aria-label="Bahasa Indonesia"
         className={cn(
-          "rounded px-2.5 py-1 min-h-[36px] min-w-[34px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "rounded px-2.5 min-h-[44px] min-w-[44px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           locale === "id"
             ? "bg-secondary text-foreground font-semibold"
             : "text-muted-foreground hover:text-foreground"

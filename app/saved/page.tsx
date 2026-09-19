@@ -51,7 +51,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 
-export default function HistoryPage() {
+export default function SavedPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { t, locale } = useI18n();
@@ -126,7 +126,7 @@ export default function HistoryPage() {
     } catch (e) {
       console.error("Failed to store thread in sessionStorage:", e);
     }
-    router.push("/");
+    router.push("/generator");
   };
 
   const confirmDelete = () => {
@@ -256,7 +256,7 @@ export default function HistoryPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-background text-foreground">
+      <main className="min-h-full bg-background text-foreground">
         <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
           {/* Masthead & Global Actions */}
           <div className="flex flex-row sm:items-center justify-between gap-4 pb-4 border-b">
@@ -283,7 +283,7 @@ export default function HistoryPage() {
                 onClick={() => fileInputRef.current?.click()}
                 variant="outline"
                 size="sm"
-                className="min-h-[38px] px-3 text-xs font-medium"
+                className="min-h-[44px] px-3 text-xs font-medium"
                 aria-label={t.history.importAria}
               >
                 <Upload className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
@@ -296,7 +296,7 @@ export default function HistoryPage() {
                     onClick={handleExportJSON}
                     variant="outline"
                     size="sm"
-                    className="min-h-[38px] px-3 text-xs font-medium"
+                    className="min-h-[44px] px-3 text-xs font-medium"
                     aria-label={t.history.exportJson}
                   >
                     <Download className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
@@ -306,7 +306,7 @@ export default function HistoryPage() {
                     onClick={handleExportTXT}
                     variant="outline"
                     size="sm"
-                    className="min-h-[38px] px-3 text-xs font-medium"
+                    className="min-h-[44px] px-3 text-xs font-medium"
                     aria-label={t.history.exportTxt}
                   >
                     <Download className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
@@ -391,7 +391,7 @@ export default function HistoryPage() {
                           onClick={() => handleLoadToStudio(thread)}
                           variant="outline"
                           size="sm"
-                          className="min-h-[36px] px-3 text-xs font-medium"
+                          className="min-h-[44px] px-3 text-xs font-medium"
                           aria-label={`${t.history.loadToStudio}: ${thread.metadata.topic}`}
                         >
                           <ArrowUpRight className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
@@ -402,7 +402,7 @@ export default function HistoryPage() {
                           onClick={() => handleDownloadSingleTXT(thread)}
                           variant="outline"
                           size="sm"
-                          className="min-h-[36px] px-2.5 text-xs font-mono font-medium"
+                          className="min-h-[44px] px-2.5 text-xs font-mono font-medium"
                           aria-label={`${t.history.downloadTxt}: ${thread.metadata.topic}`}
                           title={t.history.downloadTxt}
                         >
@@ -414,7 +414,7 @@ export default function HistoryPage() {
                           onClick={() => handleDownloadSingleJSON(thread)}
                           variant="outline"
                           size="sm"
-                          className="min-h-[36px] px-2.5 text-xs font-mono font-medium"
+                          className="min-h-[44px] px-2.5 text-xs font-mono font-medium"
                           aria-label={`${t.history.downloadJson}: ${thread.metadata.topic}`}
                           title={t.history.downloadJson}
                         >
@@ -426,7 +426,7 @@ export default function HistoryPage() {
                           onClick={() => handleCopy(thread)}
                           variant="ghost"
                           size="sm"
-                          className="min-h-[36px] px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                          className="min-h-[44px] min-w-[44px] px-2.5 text-xs text-muted-foreground hover:text-foreground"
                           aria-label={t.history.copyThreadAria}
                           title={t.history.copyThreadAria}
                         >
@@ -445,7 +445,7 @@ export default function HistoryPage() {
                           onClick={() => setThreadToDelete(thread)}
                           variant="ghost"
                           size="sm"
-                          className="min-h-[36px] px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="min-h-[44px] min-w-[44px] px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                           aria-label={t.history.deleteThreadAria}
                           title={t.history.deleteThreadAria}
                         >
@@ -480,7 +480,7 @@ export default function HistoryPage() {
                           className="text-xs font-normal border-primary/40 text-primary bg-primary/5 gap-1"
                         >
                           <ShoppingBag className="h-3 w-3" />
-                          {thread.metadata.affiliate.product?.productName || "Affiliate"}
+                          {thread.metadata.affiliate.product?.productName || t.affiliate.toggleTitle}
                         </Badge>
                       )}
                     </div>
@@ -515,6 +515,8 @@ export default function HistoryPage() {
                                         #{tag}
                                       </Badge>
                                     ))}
+                                  </div>
+                                )}
                                 {thread.metadata.affiliate?.enabled &&
                                   thread.metadata.affiliate.product?.productName &&
                                   idx === thread.tweets.length - 1 && (
@@ -522,7 +524,7 @@ export default function HistoryPage() {
                                       <div className="flex items-center justify-between gap-2">
                                         <span className="font-semibold text-primary flex items-center gap-1 text-[11px]">
                                           <ShoppingBag className="h-3 w-3" />
-                                          Produk: {thread.metadata.affiliate.product.productName}
+                                          {t.affiliate.productLabel} {thread.metadata.affiliate.product.productName}
                                         </span>
                                         {thread.metadata.affiliate.product.price && (
                                           <span className="font-mono text-[11px] text-muted-foreground">
@@ -540,8 +542,6 @@ export default function HistoryPage() {
                                       </a>
                                     </div>
                                   )}
-                              </div>
-                                )}
                               </div>
                             ))}
                           </div>
@@ -562,7 +562,7 @@ export default function HistoryPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleExpanded(thread.metadata.id)}
-                            className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground -ml-1"
+                            className="h-11 sm:h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground -ml-1"
                           >
                             {isExpanded ? (
                               <>
@@ -595,11 +595,11 @@ export default function HistoryPage() {
                         {t.history.noThreadsYet}
                       </h2>
                       <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                        Generated threads saved to your local storage will appear here for future reference and editing.
+                        {t.history.emptyLibraryDesc}
                       </p>
                     </div>
                     <div className="flex items-center justify-center gap-2.5 pt-1 flex-wrap">
-                      <Link href="/">
+                      <Link href="/generator">
                         <Button className="min-h-[44px] px-4 font-medium">
                           {t.history.createFirstThread}
                         </Button>
@@ -624,14 +624,14 @@ export default function HistoryPage() {
                         {t.history.noThreadsMatch}
                       </h2>
                       <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                        No thread matched &ldquo;{searchQuery}&rdquo;. Try another keyword or clear the search query.
+                        {t.history.noMatchDesc(searchQuery)}
                       </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setSearchQuery("")}
-                      className="min-h-[38px] px-3 text-xs"
+                      className="min-h-[44px] px-3 text-xs"
                     >
                       {t.history.clearSearch}
                     </Button>

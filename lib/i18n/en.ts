@@ -21,6 +21,7 @@ export const en: TranslationDictionary = {
     apply: "Apply",
   },
   header: {
+    home: "Home",
     generator: "Generator",
     savedLibrary: "Saved",
     savedLibraryShort: "Saved",
@@ -29,10 +30,31 @@ export const en: TranslationDictionary = {
     languageSwitch: "Switch language",
     languageName: "English",
   },
+  landing: {
+    eyebrow: "Write on paper, post as threads",
+    title: "Draft the thread before you post it.",
+    description:
+      "Threvo is a quiet composing desk for threads. Type one idea, shape it tweet by tweet, and keep the drafts worth reusing.",
+    primaryCta: "Open the composer",
+    secondaryCta: "View saved threads",
+    points: [
+      "One idea, several versions to compare.",
+      "Edit and regenerate tweet by tweet.",
+      "Save the drafts worth reusing.",
+    ],
+    sampleEyebrow: "Sample thread",
+    sampleTopic: "How to write a thread people finish reading",
+    sampleTweets: [
+      "Most threads lose the reader on tweet two. Not because the idea is weak, but because the first line promises something the second line does not deliver.",
+      "Open with the tension, not the topic. \"Threads are easy\" is a topic. \"My last thread got 4 replies because I hid the point until tweet six\" is tension.",
+      "Then earn each scroll. One idea per tweet. If a tweet needs a comma-spliced paragraph to make sense, it is two tweets.",
+      "Close by giving the reader a next move: try it on your own draft, or save it for later.",
+    ],
+  },
   composer: {
     title: "Turn your thoughts into threads.",
     subtitle:
-      "Turns your ideas into engaging threads and posts, no hassle, just simplicity.",
+      "Write one topic, get a thread you can edit tweet by tweet before you post it.",
     topicLabel: "What do you want to tweet about?",
     topicPlaceholder:
       "Enter your topic or idea here...\ne.g., 'Tips to improve developer productivity' or 'The future of artificial intelligence in everyday life'",
@@ -150,7 +172,7 @@ export const en: TranslationDictionary = {
     generatedThread: "Generated Thread",
     topic: "Topic",
     summary: (tweets: number, chars: number) =>
-      `${tweets} tweet${tweets > 1 ? "s" : ""} • ${chars} characters`,
+      `${tweets} tweet${tweets > 1 ? "s" : ""}, ${chars} characters`,
     version: (version: number) => `Version ${version}`,
     copyAll: "Copy All",
     save: "Save",
@@ -215,8 +237,10 @@ export const en: TranslationDictionary = {
     deleteDialogDesc:
       "Are you sure you want to delete this thread? This action cannot be undone.",
     noThreadsYet: "No threads saved yet",
+    emptyLibraryDesc: "Threads you save appear here. Start one in the composer to fill this list.",
     createFirstThread: "Create Your First Thread",
     noThreadsMatch: "No threads match your search",
+    noMatchDesc: (query: string) => `Nothing matched "${query}". Try another keyword, or clear the search.`,
     copyThreadAria: "Copy thread to clipboard",
     deleteThreadAria: "Delete thread",
     loadToStudio: "Load to Studio",
@@ -234,7 +258,19 @@ export const en: TranslationDictionary = {
   },
   affiliate: {
     toggleTitle: "Affiliate Storytelling",
-    toggleSubtitle: "Weave affiliate products seamlessly into authentic stories without hard-selling",
+    toggleSubtitle: "Work a product into a story by describing the problem it solves, instead of pitching it",
+    statusOn: "On",
+    statusOff: "Off",
+    productLabel: "Product:",
+    productBadge: "Product Link",
+    detectedProduct: "Detected Product",
+    copyLink: "Copy Link",
+    copied: "Copied",
+    openLink: "Open Link",
+    linkCopiedTitle: "Affiliate Link Copied",
+    keyPointsLimit: "Max 5 points",
+    tagPresetLabel: "Suggested:",
+    autoFillTopic: (productName: string) => `Review and experience with ${productName}`,
     productUrlLabel: "Product Link (Shopee, Tokopedia, TikTok, etc.)",
     productUrlPlaceholder: "https://product marketplace link",
     fetchButton: "Fetch Details",

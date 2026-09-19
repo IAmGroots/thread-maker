@@ -105,7 +105,6 @@ function normalizeAIResponse(
 
 export async function POST(request: NextRequest) {
   try {
-    // Validate API configuration
     const configValidation = validateAIConfig();
     if (!configValidation.valid) {
       return NextResponse.json(
@@ -114,7 +113,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse and validate request body with Zod
     const rawBody = await request.json();
     const validationResult = generateRequestSchema.safeParse(rawBody);
     if (!validationResult.success) {
@@ -128,24 +126,19 @@ export async function POST(request: NextRequest) {
     }
     const { config } = validationResult.data;
 
-    // Build prompts
     const systemPrompt = SYSTEM_PROMPT;
     const userPrompt = buildUserPrompt(config);
 
-    // Generate content
     const response = await generateCompletion(systemPrompt, userPrompt);
 
-    // Parse response
     const parsedRaw = parseJSONResponse<unknown>(response);
 
-    // Normalize AI response to handle all variations
     const normalizedVersions = normalizeAIResponse(parsedRaw);
 
     if (normalizedVersions.length === 0) {
       throw new Error("Invalid response format from AI");
     }
 
-    // Process each version
     const threads = normalizedVersions.map((version) => {
       const processedTweets = version.tweets.map((tweet) => {
         let content = tweet.content;

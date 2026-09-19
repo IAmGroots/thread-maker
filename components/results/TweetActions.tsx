@@ -41,7 +41,7 @@ export function TweetActions({
           <Button
             onClick={onSave}
             disabled={isLoading}
-            className="min-h-[40px] px-4 text-xs sm:text-sm font-medium"
+            className="min-h-[44px] px-4 text-xs sm:text-sm font-medium"
           >
             <Save className="h-4 w-4 mr-1" aria-hidden="true" />
             {t.results.save}
@@ -53,7 +53,7 @@ export function TweetActions({
             onClick={onTransform}
             disabled={isLoading}
             variant="outline"
-            className="min-h-[40px] px-3 text-xs sm:text-sm"
+            className="min-h-[44px] px-3 text-xs sm:text-sm"
           >
             <Wand2 className="h-4 w-4 mr-1" aria-hidden="true" />
             {t.results.transform}
@@ -65,7 +65,7 @@ export function TweetActions({
             onClick={onAdjustLength}
             disabled={isLoading}
             variant="outline"
-            className="min-h-[40px] px-3 text-xs sm:text-sm"
+            className="min-h-[44px] px-3 text-xs sm:text-sm"
           >
             <SlidersHorizontal className="h-4 w-4 mr-1" aria-hidden="true" />
             {t.adjustLength.dialogTitle}
@@ -77,7 +77,7 @@ export function TweetActions({
             onClick={onRegenerateAll}
             disabled={isLoading}
             variant="outline"
-            className="min-h-[40px] px-3 text-xs sm:text-sm"
+            className="min-h-[44px] px-3 text-xs sm:text-sm"
           >
             <RefreshCw
               className={cn("h-4 w-4 mr-1", isLoading && "animate-spin")}
@@ -95,7 +95,7 @@ export function TweetActions({
             onClick={onCopyAll}
             disabled={isLoading}
             variant="ghost"
-            className="min-h-[40px] px-3 text-xs sm:text-sm text-muted-foreground hover:text-foreground"
+            className="min-h-[44px] px-3 text-xs sm:text-sm text-muted-foreground hover:text-foreground"
           >
             <Copy className="h-4 w-4 mr-1" aria-hidden="true" />
             {t.results.copyAll}
@@ -107,7 +107,7 @@ export function TweetActions({
             onClick={onExport}
             disabled={isLoading}
             variant="ghost"
-            className="min-h-[40px] px-3 text-xs sm:text-sm text-muted-foreground hover:text-foreground"
+            className="min-h-[44px] px-3 text-xs sm:text-sm text-muted-foreground hover:text-foreground"
           >
             <Download className="h-4 w-4 mr-1" aria-hidden="true" />
             {t.results.export}

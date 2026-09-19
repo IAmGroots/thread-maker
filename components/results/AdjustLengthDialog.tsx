@@ -99,7 +99,7 @@ export function AdjustLengthDialog({
                 onValueChange={(val) => setTweetIndex(Number(val))}
                 disabled={isLoading}
               >
-                <SelectTrigger id="adjust-tweet-select" className="min-h-[40px]">
+                <SelectTrigger id="adjust-tweet-select" className="min-h-[44px]">
                   <SelectValue>
                     {t.adjustLength.selectTweetLabel(tweetIndex)}
                   </SelectValue>
@@ -185,7 +185,7 @@ export function AdjustLengthDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
-            className="min-h-[40px]"
+            className="min-h-[44px]"
           >
             {t.common.cancel}
           </Button>
@@ -193,7 +193,7 @@ export function AdjustLengthDialog({
             type="button"
             onClick={handleSubmit}
             disabled={isLoading}
-            className="min-h-[40px]"
+            className="min-h-[44px]"
           >
             {isLoading ? (
               <>

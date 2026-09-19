@@ -33,7 +33,7 @@
     --destructive: 0 55% 45%;       /* #B23434 — merah bata */
     --destructive-foreground: 40 33% 97%;
 
-    --warning: 35 75% 45%;          /* #C9821F — ochre */
+    --warning: 35 81% 31%;          /* #8F5A0F — ochre, darkened to pass AA as text */
     --warning-foreground: 40 33% 97%;
 
     --success: 145 40% 32%;         /* #316B4A — hijau botol */
@@ -43,9 +43,9 @@
     --info-foreground: 40 33% 97%;
 
     /* ===== BORDER & RING ===== */
-    --border: 35 15% 82%;           /* #D6D0C5 — seperti garis pensil */
-    --input: 35 15% 82%;
-    --ring: 195 55% 50%;            /* #3DA5C4 — Sky Mist lebih tegas */
+    --border: 35 15% 82%;           /* #D6D0C5 — seperti garis pensil (garis dekoratif) */
+    --input: 32 8% 50%;             /* #8A8177 — batas kontrol, 3.54:1 di atas base (WCAG 1.4.11) */
+    --ring: 197 53% 35%;            /* #2A6E89 — Sky Mist tegas, 5.28:1 sebagai ring fokus (WCAG) */
 
     --radius: 0.5rem;
   }
@@ -79,7 +79,7 @@
   
     --warning: 38 80% 65%;           /* #E8B860 */
     --warning-foreground: 222 25% 8%;
-  
+
     --success: 145 50% 60%;          /* #6BC791 */
     --success-foreground: 222 25% 8%;
   
@@ -87,7 +87,7 @@
     --info-foreground: 222 25% 8%;
   
     --border: 222 20% 20%;           /* #28303A */
-    --input: 222 20% 20%;
+    --input: 215 12% 40%;            /* #5A6472 — batas kontrol, 3.09:1 di atas base gelap */
     --ring: 195 60% 72%;
   }
 }
@@ -95,6 +95,12 @@
 @layer base {
   * {
     @apply border-border;
+  }
+  html {
+    /* Reserve scrollbar space on every page so switching between tabs
+       (Home without scrollbar, Generator/Saved with scrollbar) never
+       shifts the centred layout horizontally. */
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground;

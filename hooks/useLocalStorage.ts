@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
-  // State to store our value
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === "undefined") {
       return initialValue;
@@ -24,9 +23,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         // Allow value to be a function so we have same API as useState
         const valueToStore =
           value instanceof Function ? value(storedValue) : value;
-        // Save state
         setStoredValue(valueToStore);
-        // Save to localStorage
         if (typeof window !== "undefined") {
           window.localStorage.setItem(key, JSON.stringify(valueToStore));
         }

@@ -17,7 +17,6 @@ import {
 const STORAGE_VERSION = "1.0.0";
 const DEFAULT_MAX_THREADS = 100;
 
-// Initialize storage
 function initStorage(): void {
   if (typeof window === "undefined") return;
 
@@ -32,7 +31,6 @@ function initStorage(): void {
   }
 }
 
-// Get all threads
 export function getThreads(): SavedThread[] {
   if (typeof window === "undefined") return [];
 
@@ -51,14 +49,12 @@ export function getThreads(): SavedThread[] {
   }
 }
 
-// Save a new thread
 export function saveThread(thread: SavedThread): boolean {
   if (typeof window === "undefined") return false;
 
   try {
     const existing = getThreads();
 
-    // Check if we've reached the limit
     const maxThreads = parseInt(
       process.env.NEXT_PUBLIC_MAX_THREADS_STORAGE ||
         String(DEFAULT_MAX_THREADS),
@@ -85,7 +81,6 @@ export function saveThread(thread: SavedThread): boolean {
   }
 }
 
-// Update an existing thread
 export function updateThread(
   threadId: string,
   updates: Partial<SavedThread>,
@@ -122,7 +117,6 @@ export function updateThread(
   }
 }
 
-// Delete a thread
 export function deleteThread(threadId: string): boolean {
   if (typeof window === "undefined") return false;
 
@@ -144,7 +138,6 @@ export function deleteThread(threadId: string): boolean {
   }
 }
 
-// Get a single thread by ID
 export function getThreadById(threadId: string): SavedThread | null {
   const threads = getThreads();
   return threads.find((t) => t.metadata.id === threadId) || null;
@@ -169,7 +162,6 @@ export function clearAllThreads(): boolean {
   }
 }
 
-// Helper to convert topic to filename slug
 export function slugifyTopic(text: string): string {
   return (
     text
@@ -395,7 +387,6 @@ function normalizeImportedJSON(parsed: unknown): SavedThread[] {
   return results;
 }
 
-// Parse TXT file content into SavedThread[]
 function parseTXTContent(content: string, filename: string = ""): SavedThread[] {
   // Check if multiple threads are separated by divider blocks
   const threadSplitRegex =
@@ -629,7 +620,6 @@ export function importThreads(newThreads: SavedThread[]): {
   }
 }
 
-// Download file helper
 export function downloadFile(
   content: string,
   filename: string,
@@ -648,7 +638,6 @@ export function downloadFile(
   URL.revokeObjectURL(url);
 }
 
-// Get storage info
 export function getStorageInfo(): StorageConfig & {
   currentCount: number;
   percentUsed: number;

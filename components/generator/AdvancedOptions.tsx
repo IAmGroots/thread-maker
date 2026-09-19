@@ -224,7 +224,7 @@ export function AdvancedOptions({
                 key={value}
                 value={String(value)}
                 aria-label={t.composer.versionAria(value)}
-                className="h-9"
+                className="h-11"
               >
                 {value}
               </ToggleGroupItem>

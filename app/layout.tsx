@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "Threvo";
 const APP_DESCRIPTION =
   process.env.NEXT_PUBLIC_APP_DESCRIPTION ??
-  "Threvo turns your ideas into engaging threads and posts — no hassle, just simplicity.";
+  "Threvo turns your ideas into threads and posts you can edit before you post them.";
 const APP_SHORT_DESCRIPTION =
   process.env.NEXT_PUBLIC_APP_SHORT_DESCRIPTION ??
   "A simple way to turn ideas into great threads.";
