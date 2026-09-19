@@ -54,6 +54,10 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
     limit: 10, // 10 requests per minute
     windowMs: 60 * 1000,
   },
+  "/api/affiliate/resolve": {
+    limit: 15,
+    windowMs: 60 * 1000,
+  },
 };
 
 export function checkRateLimit(

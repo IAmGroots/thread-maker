@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, PenTool } from "lucide-react";
 import { TopicInput } from "@/components/generator/TopicInput";
+import { AffiliateSection } from "@/components/generator/AffiliateSection";
 import { CustomizationPanel } from "@/components/generator/CustomizationPanel";
 import { ThreadPreview } from "@/components/results/ThreadPreview";
 import { VersionTabs } from "@/components/results/VersionTabs";
@@ -15,7 +16,7 @@ import { AdjustLengthDialog } from "@/components/results/AdjustLengthDialog";
 import { DEFAULT_GENERATOR_CONFIG, GeneratorConfig } from "@/types/generator";
 import { GeneratedThread, SavedThread, Tweet, WritingStyle, Tone } from "@/types/thread";
 import { generateId, countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
-import { saveThread, downloadFile } from "@/lib/storage/localStorage";
+import { saveThread, downloadFile, exportSingleThreadToTXT } from "@/lib/storage/localStorage";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
 
@@ -41,9 +42,9 @@ export default function Home() {
   // Check if a saved thread was requested to be loaded from Saved Library
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem("thread_maker_load_thread");
+      const raw = sessionStorage.getItem("threvo_load_thread");
       if (raw) {
-        sessionStorage.removeItem("thread_maker_load_thread");
+        sessionStorage.removeItem("threvo_load_thread");
         const loadedThread = JSON.parse(raw) as SavedThread;
         if (loadedThread && loadedThread.metadata) {
           const tweetCount =
@@ -79,6 +80,8 @@ export default function Home() {
               loadedThread.metadata.settings?.customHashtags || [],
             tweetLength:
               loadedThread.metadata.settings?.tweetLength || "medium",
+            affiliate:
+              loadedThread.metadata.affiliate || DEFAULT_GENERATOR_CONFIG.affiliate,
           });
 
           const genThread: GeneratedThread = {
@@ -110,6 +113,25 @@ export default function Home() {
       return;
     }
     setTopicError("");
+
+    if (config.affiliate?.enabled) {
+      if (!config.affiliate.product?.productName?.trim()) {
+        toast({
+          title: t.affiliate.productNameLabel,
+          description: t.affiliate.productNamePlaceholder,
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!config.affiliate.product?.affiliateUrl?.trim()) {
+        toast({
+          title: t.affiliate.affiliateUrlLabel,
+          description: t.affiliate.affiliateUrlPlaceholder,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     setIsLoading(true);
     try {
@@ -161,6 +183,7 @@ export default function Home() {
                 customHashtags: config.customHashtags,
                 tweetLength: config.tweetLength,
               },
+              affiliate: config.affiliate,
             },
             tweets,
             totalTweets: tweets.length,
@@ -454,9 +477,13 @@ export default function Home() {
     const threadToExport = generatedThreads[activeVersion - 1];
     if (!threadToExport) return;
 
-    const content = threadToExport.tweets
-      .map((t) => `${t.order}/${threadToExport.totalTweets}\n\n${t.content}`)
-      .join("\n\n---\n\n");
+    const savedThread: SavedThread = {
+      ...threadToExport,
+      isFavorite: false,
+      tags: [],
+      notes: "",
+    };
+    const content = exportSingleThreadToTXT(savedThread);
 
     downloadFile(content, `thread-${Date.now()}.txt`, "text/plain");
     toast({
@@ -477,7 +504,7 @@ export default function Home() {
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {t.composer.title}
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
               {t.composer.subtitle}
             </p>
           </div>
@@ -494,6 +521,16 @@ export default function Home() {
                     if (topicError) setTopicError("");
                   }}
                   error={topicError}
+                />
+
+                <AffiliateSection
+                  affiliate={config.affiliate}
+                  onChange={(affiliate) => setConfig({ ...config, affiliate })}
+                  onAutoFillTopic={(suggestedTopic) => {
+                    if (!config.topic.trim()) {
+                      setConfig((prev) => ({ ...prev, topic: suggestedTopic }));
+                    }
+                  }}
                 />
 
                 <CustomizationPanel

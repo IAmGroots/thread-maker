@@ -191,6 +191,70 @@ HASHTAGS:
 - Do NOT include any hashtags.`;
   }
 
+  if (config.affiliate?.enabled && config.affiliate.product) {
+    const affiliate = config.affiliate.product;
+    const sanitizedName = sanitizeUserInput(affiliate.productName);
+    const sanitizedPrice = affiliate.price
+      ? sanitizeUserInput(affiliate.price)
+      : "";
+    const sanitizedPoints =
+      affiliate.keyPoints && affiliate.keyPoints.length > 0
+        ? affiliate.keyPoints.map((p) => `- ${sanitizeUserInput(p)}`).join("\n")
+        : "";
+    const sanitizedTag = affiliate.disclosureTag?.trim()
+      ? sanitizeUserInput(affiliate.disclosureTag.trim())
+      : "";
+    const ctaPlacement = affiliate.ctaPlacement || "last_tweet";
+
+    let affiliateStoryGuide = "";
+    switch (affiliate.storyAngle) {
+      case "problem-solution":
+        affiliateStoryGuide =
+          "Problem & Solution: Anchor in a real pain point, explore tension, and reveal the product naturally as the organic turning point.";
+        break;
+      case "honest-review":
+        affiliateStoryGuide =
+          "Honest Review / Comparison: Share firsthand observations, pros and trade-offs, and explain why this product was chosen without sounding like an ad.";
+        break;
+      case "accidental-discovery":
+        affiliateStoryGuide =
+          "Accidental Discovery: Describe discovering the product unexpectedly while searching for answers, followed by practical results.";
+        break;
+      case "before-after":
+        affiliateStoryGuide =
+          "Before & After: Show a grounded contrast between life before and after solving the problem with this tool.";
+        break;
+      case "step-by-step":
+        affiliateStoryGuide =
+          "Step-by-Step: Provide educational value with steps or tips, presenting the product as a recommended tool for one specific step.";
+        break;
+      default:
+        affiliateStoryGuide =
+          "Organic narrative leading smoothly to the product recommendation.";
+    }
+
+    prompt += `
+
+AFFILIATE STORYTELLING:
+- Product: ${sanitizedName}
+${sanitizedPrice ? `- Price: ${sanitizedPrice}\n` : ""}${
+      sanitizedPoints ? `- Key Benefits/Highlights:\n${sanitizedPoints}\n` : ""
+    }- Framework: ${affiliateStoryGuide}
+
+NARRATIVE ARC & PRODUCT PLACEMENT:
+1. HOOK & FIRST HALF: Focus entirely on the core problem, story, or insight. Never name or pitch the product in the first tweet or first 50% of the thread.
+2. LATTER HALF: Introduce the product organically as part of the personal experience or discovery.
+3. FINAL TWEET:
+   - Wrap up with an authentic, friendly conclusion mentioning the product naturally${
+     sanitizedTag ? ` and include disclosure tag(s) ${sanitizedTag}` : ""
+   }.
+   - Do NOT paste any URLs or links inside the tweet text. The product link and details will be displayed separately at the bottom of the thread.
+4. ANTI-SLOP SELLING RESTRICTIONS:
+   - Do NOT use pushy marketing clichés (e.g. "wajib punya", "buruan checkout", "game changer", "racun belanja", "solusi ajaib", "klik link di bio").
+   - Do NOT fabricate fake discounts, flash-sale timers, or false health claims.
+   - Do NOT write raw URLs or web addresses into the tweet text.`;
+  }
+
   prompt += `
 
 VERSIONS:
@@ -258,6 +322,23 @@ REQUIREMENTS:
   if (config.includeEmojis === false) prompt += `\nEMOJIS: Do NOT use emojis.`;
   if (config.includeHashtags === false)
     prompt += `\nHASHTAGS: Do NOT use hashtags.`;
+  if (config.affiliate?.enabled && config.affiliate.product) {
+    const affiliate = config.affiliate.product;
+    if (tweetIndex === 0) {
+      prompt += `\n- AFFILIATE CONTEXT: This is the opening hook. Focus purely on curiosity and problem resonance. Do NOT mention "${sanitizeUserInput(
+        affiliate.productName
+      )}".`;
+    } else if (tweetIndex === totalTweets - 1) {
+      const tag = affiliate.disclosureTag?.trim()
+        ? sanitizeUserInput(affiliate.disclosureTag.trim())
+        : "";
+      prompt += `\n- AFFILIATE CONTEXT: This is the final tweet. Bring the story to an authentic close${
+        tag ? ` with disclosure ${tag}` : ""
+      }. Do NOT paste any URLs or web links into the tweet text.`;
+    } else {
+      prompt += `\n- AFFILIATE CONTEXT: Focus on storytelling and practical value. Avoid hard-selling.`;
+    }
+  }
 
   prompt += `
 

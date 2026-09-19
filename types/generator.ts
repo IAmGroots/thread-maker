@@ -4,7 +4,18 @@ import {
   ContentGoal,
   Language,
   TweetLength,
+  AffiliateConfig,
+  AffiliateProduct,
+  AffiliateStoryAngle,
+  AffiliateCtaPlacement,
 } from "./thread";
+
+export type {
+  AffiliateConfig,
+  AffiliateProduct,
+  AffiliateStoryAngle,
+  AffiliateCtaPlacement,
+};
 
 // Generator configuration
 export interface GeneratorConfig {
@@ -23,6 +34,7 @@ export interface GeneratorConfig {
   includeEmojis: boolean;
   includeHashtags: boolean;
   customHashtags?: string[];
+  affiliate?: AffiliateConfig;
 }
 
 // Default generator settings
@@ -42,6 +54,9 @@ export const DEFAULT_GENERATOR_CONFIG: GeneratorConfig = {
   includeEmojis: false,
   includeHashtags: false,
   customHashtags: [],
+  affiliate: {
+    enabled: false,
+  },
 };
 
 // Generator settings (subset of config)

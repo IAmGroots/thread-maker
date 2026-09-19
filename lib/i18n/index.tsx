@@ -5,7 +5,7 @@ import { UILocale, TranslationDictionary } from "./types";
 import { en } from "./en";
 import { id } from "./id";
 
-const UI_LOCALE_STORAGE_KEY = "threads_maker_ui_locale";
+const UI_LOCALE_STORAGE_KEY = "threvo_ui_locale";
 const DEFAULT_LOCALE: UILocale = "en";
 
 interface I18nContextType {

@@ -7,6 +7,7 @@ import { GeneratedThread } from "@/types/thread";
 import { copyToClipboard } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
+import { ShoppingBag } from "lucide-react";
 
 interface ThreadPreviewProps {
   thread: GeneratedThread;
@@ -39,7 +40,8 @@ export function ThreadPreview({
   const handleCopyAll = async () => {
     const formattedThread = thread.tweets
       .map(
-        (tweet) => `${tweet.order}/${thread.totalTweets}\n\n${tweet.content}`,
+        (tweet) =>
+          `${tweet.order}/${thread.totalTweets}\n\n${tweet.content.replace(/\[AFFILIATE_LINK\]/g, "").trim()}`,
       )
       .join("\n\n---\n\n");
 
@@ -82,32 +84,60 @@ export function ThreadPreview({
             {t.results.summary(thread.totalTweets, thread.totalChars)}
           </p>
         </div>
+
+        {thread.metadata?.affiliate?.enabled && thread.metadata?.affiliate?.product?.productName && (
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/20 text-xs self-start sm:self-auto">
+            <ShoppingBag className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span className="text-muted-foreground">Produk:</span>
+            <span className="font-medium text-foreground truncate max-w-[200px]">
+              {thread.metadata.affiliate.product.productName}
+            </span>
+            {thread.metadata.affiliate.product.price && (
+              <span className="text-muted-foreground font-mono text-[11px]">
+                • {thread.metadata.affiliate.product.price}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tweet Cards with Thread Connector Line */}
       <div className="space-y-0">
-        {thread.tweets.map((tweet, index) => (
-          <div key={tweet.id || index}>
-            <TweetCard
-              tweet={tweet}
-              index={index}
-              total={thread.totalTweets}
-              onEdit={
-                onEditTweet ? (content) => onEditTweet(index, content) : undefined
-              }
-              onRegenerate={
-                onRegenerateTweet ? () => onRegenerateTweet(index) : undefined
-              }
-              onCopy={() => handleCopySingle(tweet)}
-              onAdjustLength={
-                onAdjustLengthTweet
-                  ? () => onAdjustLengthTweet(index)
-                  : undefined
-              }
-            />
-            {index < thread.tweets.length - 1 && <ThreadConnectorLine />}
-          </div>
-        ))}
+        {thread.tweets.map((tweet, index) => {
+          const isAffiliateEnabled = Boolean(thread.metadata?.affiliate?.enabled);
+          const affiliateProd = thread.metadata?.affiliate?.product;
+          const isLastTweet = index === thread.tweets.length - 1;
+          const containsAffiliateUrl = Boolean(
+            affiliateProd?.affiliateUrl && tweet.content.includes(affiliateProd.affiliateUrl)
+          );
+          const isAffiliateTweet = isAffiliateEnabled && (isLastTweet || containsAffiliateUrl);
+
+          return (
+            <div key={tweet.id || index}>
+              <TweetCard
+                tweet={tweet}
+                index={index}
+                total={thread.totalTweets}
+                onEdit={
+                  onEditTweet ? (content) => onEditTweet(index, content) : undefined
+                }
+                onRegenerate={
+                  onRegenerateTweet ? () => onRegenerateTweet(index) : undefined
+                }
+                onCopy={() => handleCopySingle(tweet)}
+                onAdjustLength={
+                  onAdjustLengthTweet
+                    ? () => onAdjustLengthTweet(index)
+                    : undefined
+                }
+                affiliateUrl={isAffiliateTweet ? affiliateProd?.affiliateUrl : undefined}
+                isAffiliateTweet={isAffiliateTweet}
+                affiliateProduct={isAffiliateTweet ? affiliateProd : undefined}
+              />
+              {index < thread.tweets.length - 1 && <ThreadConnectorLine />}
+            </div>
+          );
+        })}
       </div>
 
       {/* Actions Toolbar */}

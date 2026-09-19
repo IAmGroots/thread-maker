@@ -36,6 +36,7 @@ export interface ThreadMetadata {
   targetAudience: string;
   contentGoal: ContentGoal;
   settings: GeneratorSettings;
+  affiliate?: AffiliateConfig;
 }
 
 // Generated thread
@@ -83,7 +84,33 @@ export type ContentGoal =
   | "personal-branding"
   | "education"
   | "promotion"
-  | "follower-growth";
+  | "follower-growth"
+  | "affiliate";
+
+export type AffiliateStoryAngle =
+  | "problem-solution"
+  | "honest-review"
+  | "accidental-discovery"
+  | "before-after"
+  | "step-by-step";
+
+export type AffiliateCtaPlacement = "last_tweet" | "reply";
+
+export interface AffiliateProduct {
+  productName: string;
+  productUrl?: string;
+  affiliateUrl: string;
+  price?: string;
+  keyPoints?: string[];
+  storyAngle?: AffiliateStoryAngle;
+  disclosureTag?: string;
+  ctaPlacement?: AffiliateCtaPlacement;
+}
+
+export interface AffiliateConfig {
+  enabled: boolean;
+  product?: AffiliateProduct;
+}
 
 // Language options
 export type Language = "id" | "en";
@@ -118,6 +145,20 @@ export const CONTENT_GOAL_LABELS: Record<ContentGoal, string> = {
   education: "Education",
   promotion: "Promotion",
   "follower-growth": "Follower Growth",
+  affiliate: "Affiliate Storytelling",
+};
+
+export const AFFILIATE_STORY_ANGLE_LABELS: Record<AffiliateStoryAngle, string> = {
+  "problem-solution": "Problem & Solusi",
+  "honest-review": "Review Jujur / Komparasi",
+  "accidental-discovery": "Penemuan Tidak Sengaja",
+  "before-after": "Before & After",
+  "step-by-step": "Panduan & Rekomendasi Alat",
+};
+
+export const AFFILIATE_CTA_PLACEMENT_LABELS: Record<AffiliateCtaPlacement, string> = {
+  last_tweet: "Final Tweet of Thread",
+  reply: "Separate Reply",
 };
 
 export const LANGUAGE_LABELS: Record<Language, string> = {
@@ -126,7 +167,7 @@ export const LANGUAGE_LABELS: Record<Language, string> = {
 };
 
 export const TWEET_LENGTH_LABELS: Record<TweetLength, string> = {
-  short: "Short (200-250 chars)",
-  medium: "Medium (250-350 chars)",
-  long: "Long (350-500 chars)",
+  short: "Short",
+  medium: "Medium",
+  long: "Long",
 };

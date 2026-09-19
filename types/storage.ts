@@ -9,9 +9,9 @@ export interface LocalStorageData {
 
 // Storage keys
 export const STORAGE_KEYS = {
-  THREADS: "threads_maker_threads",
-  SETTINGS: "threads_maker_settings",
-  API_CONFIG: "threads_maker_api_config",
+  THREADS: "threvo_threads",
+  SETTINGS: "threvo_settings",
+  API_CONFIG: "threvo_api_config",
 } as const;
 
 // Storage configuration

@@ -36,6 +36,7 @@ import {
   Upload,
   ChevronDown,
   ChevronUp,
+  ShoppingBag,
 } from "lucide-react";
 import { copyToClipboard } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -75,11 +76,18 @@ export default function HistoryPage() {
         const matchesTopic = thread.metadata.topic?.toLowerCase().includes(q);
         const matchesStyle = thread.metadata.style?.toLowerCase().includes(q);
         const matchesTone = thread.metadata.tone?.toLowerCase().includes(q);
+        const matchesAffiliate =
+          thread.metadata.affiliate?.product?.productName
+            ?.toLowerCase()
+            .includes(q) ||
+          thread.metadata.affiliate?.product?.affiliateUrl
+            ?.toLowerCase()
+            .includes(q);
         const matchesContent = thread.tweets?.some((tw) =>
           tw.content?.toLowerCase().includes(q)
         );
         return Boolean(
-          matchesTopic || matchesStyle || matchesTone || matchesContent
+          matchesTopic || matchesStyle || matchesTone || matchesAffiliate || matchesContent
         );
       });
       setFilteredThreads(filtered);
@@ -112,7 +120,7 @@ export default function HistoryPage() {
   const handleLoadToStudio = (thread: SavedThread) => {
     try {
       sessionStorage.setItem(
-        "thread_maker_load_thread",
+        "threvo_load_thread",
         JSON.stringify(thread)
       );
     } catch (e) {
@@ -138,7 +146,8 @@ export default function HistoryPage() {
   const handleCopy = async (thread: SavedThread) => {
     const formattedThread = thread.tweets
       .map(
-        (tweet) => `${tweet.order}/${thread.totalTweets}\n\n${tweet.content}`
+        (tweet) =>
+          `${tweet.order}/${thread.totalTweets}\n\n${tweet.content.replace(/\[AFFILIATE_LINK\]/g, "").trim()}`
       )
       .join("\n\n---\n\n");
 
@@ -465,6 +474,15 @@ export default function HistoryPage() {
                         {t.options.languages[thread.metadata.language] ||
                           thread.metadata.language}
                       </Badge>
+                      {thread.metadata.affiliate?.enabled && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs font-normal border-primary/40 text-primary bg-primary/5 gap-1"
+                        >
+                          <ShoppingBag className="h-3 w-3" />
+                          {thread.metadata.affiliate.product?.productName || "Affiliate"}
+                        </Badge>
+                      )}
                     </div>
 
                     {/* Tweet Preview (Collapsed) or Full Tweets (Expanded) */}
@@ -497,7 +515,32 @@ export default function HistoryPage() {
                                         #{tag}
                                       </Badge>
                                     ))}
-                                  </div>
+                                {thread.metadata.affiliate?.enabled &&
+                                  thread.metadata.affiliate.product?.productName &&
+                                  idx === thread.tweets.length - 1 && (
+                                    <div className="mt-2 pt-2 border-t border-border/70 rounded-md bg-background/50 p-2.5 text-xs space-y-1.5">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="font-semibold text-primary flex items-center gap-1 text-[11px]">
+                                          <ShoppingBag className="h-3 w-3" />
+                                          Produk: {thread.metadata.affiliate.product.productName}
+                                        </span>
+                                        {thread.metadata.affiliate.product.price && (
+                                          <span className="font-mono text-[11px] text-muted-foreground">
+                                            {thread.metadata.affiliate.product.price}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <a
+                                        href={thread.metadata.affiliate.product.affiliateUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[11px] text-muted-foreground hover:text-primary hover:underline truncate block font-mono"
+                                      >
+                                        {thread.metadata.affiliate.product.affiliateUrl}
+                                      </a>
+                                    </div>
+                                  )}
+                              </div>
                                 )}
                               </div>
                             ))}

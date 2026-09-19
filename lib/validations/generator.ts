@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { affiliateConfigSchema } from "./affiliate";
+
+export * from "./affiliate";
 
 export const writingStyleEnum = z.enum([
   "professional",
@@ -29,6 +32,7 @@ export const contentGoalEnum = z.enum([
   "education",
   "promotion",
   "follower-growth",
+  "affiliate",
 ]);
 
 export const languageEnum = z.enum(["id", "en"]);
@@ -59,6 +63,7 @@ export const generateConfigSchema = z.object({
     .max(10)
     .optional()
     .default([]),
+  affiliate: affiliateConfigSchema.optional(),
 });
 
 export const generateRequestSchema = z.object({

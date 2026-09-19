@@ -148,14 +148,18 @@ export async function POST(request: NextRequest) {
     // Process each version
     const threads = normalizedVersions.map((version) => {
       const processedTweets = version.tweets.map((tweet) => {
-        const charCount = countTwitterChars(tweet.content);
+        let content = tweet.content;
+        if (content.includes("[AFFILIATE_LINK]")) {
+          content = content.replace(/\[AFFILIATE_LINK\]/g, "").replace(/\s{2,}/g, " ").trim();
+        }
+        const charCount = countTwitterChars(content);
 
         return {
-          content: tweet.content,
+          content,
           order: tweet.order,
           charCount,
-          hasEmoji: hasEmojis(tweet.content),
-          hashtags: extractHashtags(tweet.content),
+          hasEmoji: hasEmojis(content),
+          hashtags: extractHashtags(content),
         };
       });
 

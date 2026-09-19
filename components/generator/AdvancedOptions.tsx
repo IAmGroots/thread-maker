@@ -79,12 +79,15 @@ export function AdvancedOptions({
   const [hashtagInput, setHashtagInput] = useState("");
 
   const addHashtag = () => {
-    if (hashtagInput.trim() && !customHashtags.includes(hashtagInput.trim())) {
-      onCustomHashtagsChange([...customHashtags, hashtagInput.trim()]);
-      setHashtagInput("");
+    const clean = hashtagInput.trim().replace(/^#+/, "");
+    if (!clean) return;
+    const formatted = `#${clean}`;
+    if (!customHashtags.includes(formatted)) {
+      onCustomHashtagsChange([...customHashtags, formatted]);
     }
+    setHashtagInput("");
   };
-
+  
   const removeHashtag = (tag: string) => {
     onCustomHashtagsChange(customHashtags.filter((t) => t !== tag));
   };
@@ -198,7 +201,7 @@ export function AdvancedOptions({
       </div>
 
       {/* Number of Versions */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex justify-between items-center">
           <Label>{t.composer.generateVersions}</Label>
         </div>
@@ -320,7 +323,7 @@ export function AdvancedOptions({
                 }
               }}
             />
-            <Button type="button" onClick={addHashtag} variant="secondary">
+            <Button type="button" variant="secondary" onClick={addHashtag} disabled={!hashtagInput.trim()}>
               {t.common.add}
             </Button>
           </div>

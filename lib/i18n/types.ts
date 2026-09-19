@@ -157,6 +157,36 @@ export interface TranslationDictionary {
     showAllTweets: (count: number) => string;
     hideAllTweets: string;
   };
+  affiliate: {
+    toggleTitle: string;
+    toggleSubtitle: string;
+    productUrlLabel: string;
+    productUrlPlaceholder: string;
+    fetchButton: string;
+    fetchingButton: string;
+    fetchSuccess: string;
+    fetchFallbackNotice: string;
+    fetchError: string;
+    productNameLabel: string;
+    productNamePlaceholder: string;
+    affiliateUrlLabel: string;
+    affiliateUrlPlaceholder: string;
+    priceLabel: string;
+    pricePlaceholder: string;
+    keyPointsLabel: string;
+    keyPointsPlaceholder: string;
+    keyPointsDesc: string;
+    storyAngleLabel: string;
+    storyAngleDesc: string;
+    ctaPlacementLabel: string;
+    ctaPlacementDesc: string;
+    disclosureTagLabel: string;
+    disclosureTagCustomPlaceholder: string;
+    cardPreviewTitle: string;
+    removeProduct: string;
+    angles: Record<string, string>;
+    ctaPlacements: Record<string, string>;
+  };
   toasts: {
     success: string;
     generatedSuccess: (count: number) => string;

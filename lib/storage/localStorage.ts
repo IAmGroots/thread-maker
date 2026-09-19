@@ -200,6 +200,18 @@ export function exportSingleThreadToTXT(thread: SavedThread): string {
     }
   });
 
+  if (thread.metadata.affiliate?.enabled && thread.metadata.affiliate.product) {
+    const prod = thread.metadata.affiliate.product;
+    output += `--------------------------------------------------\n`;
+    output += `PRODUK AFILIASI:\n`;
+    output += `Nama Produk: ${prod.productName}\n`;
+    output += `Link Afiliasi: ${prod.affiliateUrl}\n`;
+    if (prod.productUrl) output += `Link Produk: ${prod.productUrl}\n`;
+    if (prod.price) output += `Harga: ${prod.price}\n`;
+    if (prod.disclosureTag) output += `Tag: ${prod.disclosureTag}\n`;
+    if (prod.storyAngle) output += `Sudut Pandang: ${prod.storyAngle}\n`;
+  }
+
   output += `==================================================\n`;
   return output;
 }
@@ -236,6 +248,18 @@ export function exportToTXT(threadsList?: SavedThread[]): string {
         output += `---\n\n`;
       }
     });
+
+    if (thread.metadata.affiliate?.enabled && thread.metadata.affiliate.product) {
+      const prod = thread.metadata.affiliate.product;
+      output += `--------------------------------------------------\n`;
+      output += `PRODUK AFILIASI:\n`;
+      output += `Nama Produk: ${prod.productName}\n`;
+      output += `Link Afiliasi: ${prod.affiliateUrl}\n`;
+      if (prod.productUrl) output += `Link Produk: ${prod.productUrl}\n`;
+      if (prod.price) output += `Harga: ${prod.price}\n`;
+      if (prod.disclosureTag) output += `Tag: ${prod.disclosureTag}\n`;
+      if (prod.storyAngle) output += `Sudut Pandang: ${prod.storyAngle}\n`;
+    }
 
     output += `\n\n`;
   });
@@ -351,6 +375,10 @@ function normalizeImportedJSON(parsed: unknown): SavedThread[] {
           includeHashtags: tweets.some((t) => t.hashtags.length > 0),
           tweetLength: "medium",
         },
+        affiliate:
+          meta.affiliate && typeof meta.affiliate === "object"
+            ? (meta.affiliate as SavedThread["metadata"]["affiliate"])
+            : undefined,
       },
       tweets,
       totalTweets: tweets.length,
@@ -412,6 +440,28 @@ function parseTXTContent(content: string, filename: string = ""): SavedThread[] 
       else language = "id";
     }
 
+    const affiliateProdMatch = block.match(/(?:Nama Produk|Product Name):\s*([^\n]+)/i);
+    const affiliateUrlMatch = block.match(/(?:Link Afiliasi|Affiliate Link):\s*([^\n]+)/i);
+    const affiliateItemUrlMatch = block.match(/(?:Link Produk|Product Link):\s*([^\n]+)/i);
+    const affiliatePriceMatch = block.match(/(?:Harga|Price):\s*([^\n]+)/i);
+    const affiliateTagMatch = block.match(/(?:Tag|Disclosure):\s*([^\n]+)/i);
+    const affiliateAngleMatch = block.match(/(?:Sudut Pandang|Story Angle):\s*([^\n]+)/i);
+
+    let affiliateConfig: SavedThread["metadata"]["affiliate"] = undefined;
+    if (affiliateProdMatch && affiliateUrlMatch) {
+      affiliateConfig = {
+        enabled: true,
+        product: {
+          productName: affiliateProdMatch[1].trim(),
+          affiliateUrl: affiliateUrlMatch[1].trim(),
+          productUrl: affiliateItemUrlMatch ? affiliateItemUrlMatch[1].trim() : undefined,
+          price: affiliatePriceMatch ? affiliatePriceMatch[1].trim() : undefined,
+          disclosureTag: affiliateTagMatch ? affiliateTagMatch[1].trim() : undefined,
+          storyAngle: affiliateAngleMatch ? (affiliateAngleMatch[1].trim() as any) : "problem-solution",
+        },
+      };
+    }
+
     // Strip top banner / metadata lines before parsing tweets
     const bodyContent = block
       .replace(
@@ -419,6 +469,7 @@ function parseTXTContent(content: string, filename: string = ""): SavedThread[] 
         "",
       )
       .replace(/^[=\-]{10,}\s*/gm, "")
+      .replace(/(?:-+\s*)?PRODUK AFILIASI:[\s\S]*?(?:=|$)/i, "")
       .trim();
 
     // Split tweets: prefer `---` separator
@@ -477,6 +528,7 @@ function parseTXTContent(content: string, filename: string = ""): SavedThread[] 
           includeHashtags: tweets.some((t) => t.hashtags.length > 0),
           tweetLength: "medium",
         },
+        affiliate: affiliateConfig,
       },
       tweets,
       totalTweets: tweets.length,

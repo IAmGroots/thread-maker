@@ -17,9 +17,9 @@ export function Header() {
         <div className="flex items-center gap-4 sm:gap-8 min-w-0">
           <Link
             href="/"
-            className="text-base sm:text-xl font-bold tracking-tight text-foreground hover:opacity-80 transition-opacity flex items-center min-h-[44px] shrink-0"
+            className="text-xl sm:text-3xl font-bold tracking-tight text-foreground hover:opacity-80 transition-opacity flex items-center min-h-[44px] shrink-0"
           >
-            Thread Maker
+            {process.env.NEXT_PUBLIC_APP_NAME ?? "Threvo"}
           </Link>
         </div>
         <nav
