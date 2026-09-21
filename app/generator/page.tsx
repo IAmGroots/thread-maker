@@ -32,6 +32,8 @@ export default function GeneratorPage() {
   const [activeVersion, setActiveVersion] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [topicError, setTopicError] = useState("");
+  const [affiliateUrlError, setAffiliateUrlError] = useState("");
+  const [productNameError, setProductNameError] = useState("");
 
   const [isTransformOpen, setIsTransformOpen] = useState(false);
   const [isTransformLoading, setIsTransformLoading] = useState(false);
@@ -107,7 +109,6 @@ export default function GeneratorPage() {
   }, [t, toast]);
 
   const handleGenerate = async () => {
-    // Validation
     if (!config.topic.trim()) {
       setTopicError(t.composer.topicErrorRequired);
       return;
@@ -115,23 +116,17 @@ export default function GeneratorPage() {
     setTopicError("");
 
     if (config.affiliate?.enabled) {
-      if (!config.affiliate.product?.productName?.trim()) {
-        toast({
-          title: t.affiliate.productNameLabel,
-          description: t.affiliate.productNamePlaceholder,
-          variant: "destructive",
-        });
+      if (!config.affiliate.product?.affiliateUrl?.trim()) {
+        setAffiliateUrlError(t.affiliate.affiliateUrlError);
         return;
       }
-      if (!config.affiliate.product?.affiliateUrl?.trim()) {
-        toast({
-          title: t.affiliate.affiliateUrlLabel,
-          description: t.affiliate.affiliateUrlPlaceholder,
-          variant: "destructive",
-        });
+      if (!config.affiliate.product?.productName?.trim()) {
+        setProductNameError(t.affiliate.productNameError);
         return;
       }
     }
+    setProductNameError("");
+    setAffiliateUrlError("");
 
     setIsLoading(true);
     try {
@@ -147,7 +142,6 @@ export default function GeneratorPage() {
         throw new Error(data.error || "Failed to generate thread");
       }
 
-      // Transform API response to GeneratedThread format
       const threads: GeneratedThread[] = data.threads.map(
         (threadData: any, index: number) => {
           const tweets: Tweet[] = threadData.tweets.map((t: any) => ({
@@ -290,7 +284,6 @@ export default function GeneratorPage() {
         throw new Error(data.error || "Failed to regenerate tweet");
       }
 
-      // Update the specific tweet
       setGeneratedThreads((prev) => {
         const updated = [...prev];
         const currentThread = { ...updated[activeVersion - 1] };
@@ -499,7 +492,6 @@ export default function GeneratorPage() {
       <Header />
       <main className="min-h-full bg-background text-foreground">
         <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
-          {/* Masthead */}
           <div className="mb-6 pb-4 border-b">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {t.composer.title}
@@ -509,9 +501,7 @@ export default function GeneratorPage() {
             </p>
           </div>
 
-          {/* Editorial Workbench Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left Column: Composer */}
             <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-6">
               <div className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm space-y-4">
                 <TopicInput
@@ -525,11 +515,20 @@ export default function GeneratorPage() {
 
                 <AffiliateSection
                   affiliate={config.affiliate}
-                  onChange={(affiliate) => setConfig({ ...config, affiliate })}
-                  onAutoFillTopic={(suggestedTopic) => {
-                    if (!config.topic.trim()) {
-                      setConfig((prev) => ({ ...prev, topic: suggestedTopic }));
+                  onChange={(affiliate) => {
+                    setConfig({ ...config, affiliate });
+                    if (!affiliate.enabled) {
+                      setAffiliateUrlError("");
+                      setProductNameError("");
                     }
+                  }}
+                  affiliateUrlError={affiliateUrlError}
+                  productNameError={productNameError}
+                  onAffiliateUrlChange={() => {
+                    if (affiliateUrlError) setAffiliateUrlError("");
+                  }}
+                  onProductNameChange={() => {
+                    if (productNameError) setProductNameError("");
                   }}
                 />
 
@@ -601,7 +600,6 @@ export default function GeneratorPage() {
               </div>
             </div>
 
-            {/* Right Column: Live Workbench */}
             <div className="lg:col-span-7 space-y-4 min-w-0">
               {isLoading ? (
                 <ThreadSkeletonLoader numberOfTweets={config.numberOfTweets} />
@@ -647,7 +645,6 @@ export default function GeneratorPage() {
         </div>
       </main>
 
-      {/* Transform Dialog */}
       {currentThread && (
         <TransformDialog
           open={isTransformOpen}
@@ -659,7 +656,6 @@ export default function GeneratorPage() {
         />
       )}
 
-      {/* Adjust Length Dialog */}
       {currentThread && (
         <AdjustLengthDialog
           open={isAdjustLengthOpen}

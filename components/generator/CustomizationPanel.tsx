@@ -81,7 +81,7 @@ export function CustomizationPanel({
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           {t.composer.toneAndStyle}
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <StyleSelector value={style} onChange={onStyleChange} />
           <ToneSelector value={tone} onChange={onToneChange} />
         </div>

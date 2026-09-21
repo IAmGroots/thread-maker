@@ -5,6 +5,7 @@ import { GenerateResponse } from "@/types/generator";
 import { validateAIConfig } from "@/config/ai-provider";
 import { generateRequestSchema } from "@/lib/validations/generator";
 import { countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
+import { apiErrorResponse } from "@/lib/security/apiError";
 
 interface RawTweet {
   content?: string;
@@ -166,18 +167,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Generate API Error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "An unknown error occurred";
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: errorMessage,
-        threads: [],
-      },
-      { status: 500 },
-    );
+    return apiErrorResponse(error, "generate", 500, { threads: [] });
   }
 }

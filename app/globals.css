@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* ===== BASE — kertas cream hangat ===== */
+    /* base — warm cream paper */
     --background: 40 33% 97%;       /* #F8F6F1 */
     --foreground: 30 10% 15%;       /* #2B2724 */
 
@@ -13,23 +13,23 @@
     --popover: 40 40% 99%;
     --popover-foreground: 30 10% 15%;
 
-    /* ===== PRIMARY — teal-biru tinta (versi gelap dari Sky Mist) ===== */
+    /* primary — ink teal-blue */
     --primary: 200 55% 35%;         /* #285E6F */
     --primary-foreground: 40 40% 98%;
 
-    /* ===== SECONDARY — biru sangat lembut ===== */
+    /* secondary — very soft blue */
     --secondary: 195 45% 92%;       /* #E3EFF2 */
     --secondary-foreground: 200 55% 22%;
 
-    /* ===== MUTED — netral hangat ===== */
+    /* muted — warm neutral */
     --muted: 40 25% 93%;            /* #EFEAE0 */
     --muted-foreground: 30 8% 42%;  /* #6E6862 */
 
-    /* ===== ACCENT — Sky Mist (pilihanmu) ===== */
+    /* accent — Sky Mist */
     --accent: 195 45% 80%;          /* #BDDDE7 */
     --accent-foreground: 200 55% 22%; /* #1A4A57 — teal tua */
 
-    /* ===== STATUS — earthy, tidak neon ===== */
+    /* status — earthy, not neon */
     --destructive: 0 55% 45%;       /* #B23434 — merah bata */
     --destructive-foreground: 40 33% 97%;
 
@@ -39,10 +39,9 @@
     --success: 145 40% 32%;         /* #316B4A — hijau botol */
     --success-foreground: 40 33% 97%;
 
-    --info: 200 55% 45%;            /* #3478A8 */
+    --info: 206 55% 39%;            /* #2C6A99 — 5.36:1 on base as text (WCAG AA) */
     --info-foreground: 40 33% 97%;
 
-    /* ===== BORDER & RING ===== */
     --border: 35 15% 82%;           /* #D6D0C5 — seperti garis pensil (garis dekoratif) */
     --input: 32 8% 50%;             /* #8A8177 — batas kontrol, 3.54:1 di atas base (WCAG 1.4.11) */
     --ring: 197 53% 35%;            /* #2A6E89 — Sky Mist tegas, 5.28:1 sebagai ring fokus (WCAG) */
@@ -104,6 +103,31 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /*
+   * Radix Select (via react-remove-scroll) locks the page while a dropdown is
+   * open: it sets `overflow: hidden` on <body> — which removes the scrollbar —
+   * and injects a compensating `margin-right`/`padding-right` equal to the
+   * scrollbar width, e.g. `body[data-scroll-locked]{ padding-right:15px
+   * !important; margin-right:15px !important }`.
+   *
+   * That collides with the `scrollbar-gutter: stable` we already reserve on
+   * <html>: two mechanisms compensate for the same scrollbar, so opening a
+   * select shifts the content to the left and hides the scrollbar until the
+   * user picks an item.
+   *
+   * react-remove-scroll injects its stylesheet into <head> *after* this file,
+   * so an equally specific rule would lose the cascade — hence the `html`
+   * prefix, which raises specificity so our declarations win. `scrollbar-gutter`
+   * on <html> keeps the space reserved, so cancelling Radix's margin/padding (and
+   * not forcing `overflow: hidden`) leaves the layout untouched.
+   */
+  html body[data-scroll-locked] {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: auto;
   }
 }
 

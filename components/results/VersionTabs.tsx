@@ -43,7 +43,7 @@ export function VersionTabs({
       </div>
 
       {Array.from({ length: versions }, (_, i) => (
-        <TabsContent key={i} value={`v${i + 1}`} className="mt-3 focus-visible:outline-none">
+        <TabsContent key={i} value={`v${i + 1}`} className="mt-3">
           {i + 1 === activeVersion && children}
         </TabsContent>
       ))}

@@ -19,6 +19,7 @@ export interface TranslationDictionary {
     hide: string;
     close: string;
     apply: string;
+    loading: string;
   };
   header: {
     home: string;
@@ -91,6 +92,9 @@ export interface TranslationDictionary {
     heading: string;
     description: string;
     suggestedTopics: string;
+    refreshButton: string;
+    refreshingButton: string;
+    aiError: string;
     items: Array<{
       category: string;
       topic: string;
@@ -172,28 +176,21 @@ export interface TranslationDictionary {
     hideAllTweets: string;
   };
   affiliate: {
+    optional: string;
     toggleTitle: string;
     toggleSubtitle: string;
     statusOn: string;
     statusOff: string;
     productLabel: string;
     productBadge: string;
-    detectedProduct: string;
     copyLink: string;
     copied: string;
     openLink: string;
     linkCopiedTitle: string;
-    keyPointsLimit: string;
     tagPresetLabel: string;
-    autoFillTopic: (productName: string) => string;
-    productUrlLabel: string;
-    productUrlPlaceholder: string;
-    fetchButton: string;
-    fetchingButton: string;
-    fetchSuccess: string;
-    fetchFallbackNotice: string;
-    fetchError: string;
     productNameLabel: string;
+    productNameError: string;
+    affiliateUrlError: string;
     productNamePlaceholder: string;
     affiliateUrlLabel: string;
     affiliateUrlPlaceholder: string;
@@ -208,8 +205,6 @@ export interface TranslationDictionary {
     ctaPlacementDesc: string;
     disclosureTagLabel: string;
     disclosureTagCustomPlaceholder: string;
-    cardPreviewTitle: string;
-    removeProduct: string;
     angles: Record<string, string>;
     ctaPlacements: Record<string, string>;
   };

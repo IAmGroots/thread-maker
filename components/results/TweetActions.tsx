@@ -35,7 +35,6 @@ export function TweetActions({
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-5 border-t border-border/60">
-      {/* Primary and Secondary Actions */}
       <div className="flex flex-wrap items-center gap-2">
         {onSave && (
           <Button
@@ -88,7 +87,6 @@ export function TweetActions({
         )}
       </div>
 
-      {/* Tertiary Utilities */}
       <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
         {onCopyAll && (
           <Button

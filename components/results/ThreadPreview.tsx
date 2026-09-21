@@ -74,7 +74,6 @@ export function ThreadPreview({
 
   return (
     <div className="rounded-xl border bg-card p-4 sm:p-6 space-y-5 text-card-foreground shadow-sm">
-      {/* Thread Metadata Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-border/60">
         <div>
           <h2 className="text-base sm:text-lg font-semibold text-foreground">
@@ -86,10 +85,10 @@ export function ThreadPreview({
         </div>
 
         {thread.metadata?.affiliate?.enabled && thread.metadata?.affiliate?.product?.productName && (
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/20 text-xs self-start sm:self-auto">
+          <div className="flex flex-wrap items-center gap-2 px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/20 text-xs self-start sm:self-auto max-w-full">
             <ShoppingBag className="h-3.5 w-3.5 text-primary shrink-0" />
             <span className="text-muted-foreground">{t.affiliate.productLabel}</span>
-            <span className="font-medium text-foreground truncate max-w-[200px]">
+            <span className="font-medium text-foreground truncate max-w-[200px] min-w-0">
               {thread.metadata.affiliate.product.productName}
             </span>
             {thread.metadata.affiliate.product.price && (
@@ -101,7 +100,6 @@ export function ThreadPreview({
         )}
       </div>
 
-      {/* Tweet Cards with Thread Connector Line */}
       <div className="space-y-0">
         {thread.tweets.map((tweet, index) => {
           const isAffiliateEnabled = Boolean(thread.metadata?.affiliate?.enabled);
@@ -140,7 +138,6 @@ export function ThreadPreview({
         })}
       </div>
 
-      {/* Actions Toolbar */}
       <TweetActions
         onRegenerateAll={onRegenerateAll}
         onSave={onSave}

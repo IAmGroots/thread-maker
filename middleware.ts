@@ -1,23 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/security/rateLimit";
 
+/**
+ * Which proxy header (if any) is trusted to carry the real client IP.
+ *
+ * Only set this when the app genuinely sits behind a proxy that overwrites the
+ * header (e.g. "cf-connecting-ip" behind Cloudflare, "x-real-ip" behind nginx,
+ * "x-vercel-forwarded-for" on Vercel). Left unset, we trust nothing and fall
+ * back to x-forwarded-for's nearest hop — otherwise an attacker can spoof the
+ * IP per request and defeat the rate limiter.
+ */
+const TRUSTED_IP_HEADER = process.env.TRUSTED_IP_HEADER?.trim().toLowerCase() || "";
+
+type HeaderKey =
+  | "cf-connecting-ip"
+  | "x-real-ip"
+  | "x-vercel-forwarded-for"
+  | "x-forwarded-for";
+
+const IP_HEADER_EXTRACTORS: Record<HeaderKey, (value: string) => string> = {
+  "cf-connecting-ip": (v) => v.trim(),
+  "x-real-ip": (v) => v.trim(),
+  // Proxies may append their own hop; the client is the first entry.
+  "x-vercel-forwarded-for": (v) => v.split(",")[0].trim(),
+  "x-forwarded-for": (v) => {
+    const parts = v.split(",").map((p) => p.trim()).filter(Boolean);
+    // Nearest hop to this server, to avoid client-prepended spoofed entries.
+    return parts.length > 0 ? parts[parts.length - 1] : "";
+  },
+};
+
 function getClientIp(request: NextRequest): string {
-  const cfIp = request.headers.get("cf-connecting-ip");
-  if (cfIp) return cfIp.trim();
+  if (TRUSTED_IP_HEADER in IP_HEADER_EXTRACTORS) {
+    const raw = request.headers.get(TRUSTED_IP_HEADER);
+    if (raw) {
+      const ip = IP_HEADER_EXTRACTORS[TRUSTED_IP_HEADER as HeaderKey](raw);
+      if (ip) return ip;
+    }
+  }
 
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
-
-  const vercelIp = request.headers.get("x-vercel-forwarded-for");
-  if (vercelIp) return vercelIp.split(",")[0].trim();
-
+  // Without a configured trusted proxy, fall back to the connection's nearest
+  // hop only. This is still spoofable unless a proxy overwrites XFF, so the
+  // rate limiter stays a best-effort control until TRUSTED_IP_HEADER is set.
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    const parts = forwarded.split(",").map((p) => p.trim()).filter(Boolean);
-    if (parts.length > 0) {
-      // Use the nearest proxy hop to mitigate client-controlled prepended IPs
-      return parts[parts.length - 1];
-    }
+    const ip = IP_HEADER_EXTRACTORS["x-forwarded-for"](forwarded);
+    if (ip) return ip;
   }
 
   return "127.0.0.1";
@@ -65,7 +93,6 @@ function isAllowedOrigin(request: NextRequest): boolean {
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Protect API routes
   if (pathname.startsWith("/api/")) {
     if (!isAllowedOrigin(request)) {
       return NextResponse.json(

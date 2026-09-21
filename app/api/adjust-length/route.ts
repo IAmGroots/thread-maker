@@ -4,6 +4,7 @@ import { SYSTEM_PROMPT_MICRO, buildAdjustLengthPrompt } from "@/lib/ai/prompts";
 import { validateAIConfig } from "@/config/ai-provider";
 import { adjustLengthRequestSchema } from "@/lib/validations/generator";
 import { countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
+import { apiErrorResponse } from "@/lib/security/apiError";
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,14 +63,6 @@ export async function POST(request: NextRequest) {
       tweet: processedTweet,
     });
   } catch (error) {
-    console.error("Adjust Length API Error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "An unknown error occurred";
-
-    return NextResponse.json(
-      { success: false, error: errorMessage },
-      { status: 500 },
-    );
+    return apiErrorResponse(error, "adjust-length");
   }
 }

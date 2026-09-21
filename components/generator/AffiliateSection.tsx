@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import {
   AffiliateConfig,
   AffiliateProduct,
@@ -22,35 +21,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
-import { useToast } from "@/hooks/use-toast";
-import {
-  ShoppingBag,
-  Loader2,
-  Sparkles,
-  Link as LinkIcon,
-  Tag,
-  Plus,
-  X,
-} from "lucide-react";
+import { ShoppingBag, Link as LinkIcon, Tag, Plus, X } from "lucide-react";
 
 interface AffiliateSectionProps {
   affiliate?: AffiliateConfig;
   onChange: (value: AffiliateConfig) => void;
-  onAutoFillTopic?: (suggestedTopic: string) => void;
+  affiliateUrlError?: string;
+  productNameError?: string;
+  onAffiliateUrlChange?: () => void;
+  onProductNameChange?: () => void;
 }
 
 export function AffiliateSection({
   affiliate,
   onChange,
-  onAutoFillTopic,
+  affiliateUrlError,
+  productNameError,
+  onAffiliateUrlChange,
+  onProductNameChange,
 }: AffiliateSectionProps) {
   const { t } = useI18n();
-  const { toast } = useToast();
 
   const isEnabled = affiliate?.enabled ?? false;
   const product: Partial<AffiliateProduct> = affiliate?.product ?? {
     productName: "",
-    productUrl: "",
     affiliateUrl: "",
     price: "",
     keyPoints: [],
@@ -59,11 +53,6 @@ export function AffiliateSection({
     ctaPlacement: "last_tweet",
   };
 
-  const [productUrlInput, setProductUrlInput] = useState(
-    product.productUrl || "",
-  );
-  const [isFetching, setIsFetching] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string>("");
   const [tagInput, setTagInput] = useState("");
 
   const currentTags = product.disclosureTag
@@ -83,7 +72,6 @@ export function AffiliateSection({
       enabled: true,
       product: {
         productName: product.productName || "",
-        productUrl: product.productUrl || productUrlInput || "",
         affiliateUrl: product.affiliateUrl || "",
         price: product.price || "",
         keyPoints: product.keyPoints || [],
@@ -99,7 +87,6 @@ export function AffiliateSection({
   const updateProduct = (patch: Partial<AffiliateProduct>) => {
     const updated: AffiliateProduct = {
       productName: product.productName || "",
-      productUrl: product.productUrl || "",
       affiliateUrl: product.affiliateUrl || "",
       price: product.price || "",
       keyPoints: product.keyPoints || [],
@@ -114,77 +101,6 @@ export function AffiliateSection({
     onChange({
       enabled: true,
       product: updated,
-    });
-  };
-
-  const handleFetchMetadata = async () => {
-    if (!productUrlInput.trim()) return;
-
-    setIsFetching(true);
-    try {
-      const res = await fetch("/api/affiliate/resolve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: productUrlInput.trim() }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || t.affiliate.fetchError);
-      }
-
-      const scraped = data.data;
-
-      if (scraped.fallbackToManual) {
-        updateProduct({
-          productUrl: scraped.resolvedUrl || productUrlInput,
-          affiliateUrl:
-            product.affiliateUrl || scraped.resolvedUrl || productUrlInput,
-        });
-        toast({
-          title: t.affiliate.fetchFallbackNotice,
-        });
-      } else {
-        const title = scraped.title || "";
-        const price = scraped.price || "";
-        const image = scraped.image || "";
-
-        if (image) setPreviewImage(image);
-
-        updateProduct({
-          productName: title || product.productName || "",
-          productUrl: scraped.resolvedUrl || productUrlInput,
-          affiliateUrl:
-            product.affiliateUrl || scraped.resolvedUrl || productUrlInput,
-          price: price || product.price || "",
-        });
-
-        if (onAutoFillTopic && title && !product.productName) {
-          onAutoFillTopic(t.affiliate.autoFillTopic(title));
-        }
-
-        toast({
-          title: t.affiliate.fetchSuccess,
-        });
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : t.affiliate.fetchError;
-      toast({
-        title: t.affiliate.fetchError,
-        description: msg,
-        variant: "destructive",
-      });
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
-  const handleClearPreview = () => {
-    setProductUrlInput("");
-    setPreviewImage("");
-    updateProduct({
-      productUrl: "",
     });
   };
 
@@ -217,7 +133,7 @@ export function AffiliateSection({
   return (
     <div className="rounded-xl border bg-background p-5 text-card-foreground space-y-4">
       <div className="flex items-center justify-between gap-4">
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           <div className="flex items-center gap-2 mb-3">
             <ShoppingBag className="h-4 w-4 text-primary" aria-hidden="true" />
             <Label
@@ -266,104 +182,29 @@ export function AffiliateSection({
                 type="url"
                 placeholder={t.affiliate.affiliateUrlPlaceholder}
                 value={product.affiliateUrl || ""}
-                onChange={(e) =>
-                  updateProduct({ affiliateUrl: e.target.value })
+                onChange={(e) => {
+                  updateProduct({ affiliateUrl: e.target.value });
+                  onAffiliateUrlChange?.();
+                }}
+                className={`pl-9 text-xs sm:text-sm ${
+                  affiliateUrlError
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }`}
+                aria-invalid={affiliateUrlError ? "true" : "false"}
+                aria-describedby={
+                  affiliateUrlError ? "affiliate-url-error" : undefined
                 }
-                className="pl-9 text-xs sm:text-sm"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="product-url-input" className="text-sm font-medium">
-              {t.affiliate.productUrlLabel}
-            </Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <LinkIcon
-                  className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="product-url-input"
-                  type="url"
-                  placeholder={t.affiliate.productUrlPlaceholder}
-                  value={productUrlInput}
-                  onChange={(e) => {
-                    setProductUrlInput(e.target.value);
-                    updateProduct({ productUrl: e.target.value });
-                  }}
-                  className="pl-9 text-xs sm:text-sm"
-                />
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleFetchMetadata}
-                disabled={isFetching || !productUrlInput.trim()}
-                className="shrink-0 text-sm font-medium"
+            {affiliateUrlError && (
+              <p
+                id="affiliate-url-error"
+                role="alert"
+                className="text-sm text-destructive font-medium"
               >
-                {isFetching ? (
-                  <>
-                    <Loader2
-                      className="h-3.5 w-3.5 mr-1.5 animate-spin"
-                      aria-hidden="true"
-                    />
-                    {t.affiliate.fetchingButton}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles
-                      className="h-3.5 w-3.5 mr-1.5 text-primary"
-                      aria-hidden="true"
-                    />
-                    {t.affiliate.fetchButton}
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {(previewImage || product.productName) && (
-              <div className="flex items-center justify-between p-2.5 mt-2 rounded-lg border bg-muted/30 text-xs">
-                <div className="flex items-center gap-3 min-w-0">
-                  {previewImage ? (
-                    <Image
-                      src={previewImage}
-                      alt=""
-                      width={36}
-                      height={36}
-                      unoptimized
-                      className="w-9 h-9 object-cover rounded-md border shrink-0 bg-background"
-                      onError={() => setPreviewImage("")}
-                    />
-                  ) : (
-                    <div className="w-9 h-9 rounded-md border flex items-center justify-center bg-background shrink-0">
-                      <ShoppingBag className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="font-medium truncate text-foreground">
-                      {product.productName || t.affiliate.detectedProduct}
-                    </p>
-                    {product.price && (
-                      <p className="text-muted-foreground font-mono text-xs">
-                        {product.price}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleClearPreview}
-                  className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
-                  title={t.affiliate.removeProduct}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
+                {affiliateUrlError}
+              </p>
             )}
           </div>
 
@@ -376,18 +217,42 @@ export function AffiliateSection({
               id="product-name-input"
               placeholder={t.affiliate.productNamePlaceholder}
               value={product.productName || ""}
-              onChange={(e) => updateProduct({ productName: e.target.value })}
-              className="text-xs sm:text-sm"
+              onChange={(e) => {
+                updateProduct({ productName: e.target.value });
+                onProductNameChange?.();
+              }}
+              className={`text-xs sm:text-sm ${
+                productNameError
+                  ? "border-destructive focus-visible:ring-destructive"
+                  : ""
+              }`}
+              aria-invalid={productNameError ? "true" : "false"}
+              aria-describedby={
+                productNameError ? "product-name-error" : undefined
+              }
             />
+            {productNameError && (
+              <p
+                id="product-name-error"
+                role="alert"
+                className="text-sm text-destructive font-medium"
+              >
+                {productNameError}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label
               htmlFor="product-price-input"
-              className="text-sm font-medium"
+              className="text-sm font-medium flex items-center gap-1"
             >
               {t.affiliate.priceLabel}
+              <span className="text-muted-foreground font-normal text-xs">
+                {t.affiliate.optional}
+              </span>
             </Label>
+
             <Input
               id="product-price-input"
               placeholder={t.affiliate.pricePlaceholder}
@@ -441,23 +306,13 @@ export function AffiliateSection({
               >
                 {t.affiliate.keyPointsLabel}
               </Label>
-              <span className="text-xs text-muted-foreground">
-                {t.affiliate.keyPointsLimit}
-              </span>
             </div>
             <Textarea
               id="key-points-textarea"
               rows={3}
               placeholder={t.affiliate.keyPointsPlaceholder}
-              value={(product.keyPoints || []).join("\n")}
-              onChange={(e) => {
-                const lines = e.target.value
-                  .split("\n")
-                  .filter((line) => line.trim().length > 0)
-                  .slice(0, 5);
-                updateProduct({ keyPoints: lines });
-              }}
-              className="text-xs sm:text-sm resize-none min-h-[130px]"
+
+              className="text-xs sm:text-sm resize-none min-h-[120px]"
             />
             <p className="text-xs text-muted-foreground">
               {t.affiliate.keyPointsDesc}
@@ -494,12 +349,11 @@ export function AffiliateSection({
           <div className="space-y-2">
             <Label
               htmlFor="disclosure-tag-input"
-              className="text-sm font-medium flex items-center gap-1.5"
+              className="text-sm font-medium flex items-center gap-1"
             >
-              <Tag className="h-3 w-3 text-muted-foreground" />
               {t.affiliate.disclosureTagLabel}{" "}
               <span className="text-muted-foreground font-normal text-xs">
-                (Opsional)
+                {t.affiliate.optional}
               </span>
             </Label>
 
@@ -538,7 +392,7 @@ export function AffiliateSection({
                     <button
                       type="button"
                       onClick={() => removeTag(tag)}
-                      className="hover:bg-muted-foreground/20 rounded-full p-0.5"
+                      className="relative rounded-full p-0.5 hover:bg-muted-foreground/20 before:absolute before:-inset-3 before:content-['']"
                       aria-label={`Hapus ${tag}`}
                     >
                       <X className="h-3 w-3" />

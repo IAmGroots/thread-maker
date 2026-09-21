@@ -20,7 +20,7 @@ import {
   importThreads,
   slugifyTopic,
 } from "@/lib/storage/localStorage";
-import { formatDate, truncateText } from "@/lib/utils";
+import { formatDate, truncateText, safeHttpUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
   Search,
@@ -51,23 +51,38 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 
+// Sorts by creation date, newest first.
+function sortByNewest(list: SavedThread[]) {
+  return [...list].sort(
+    (a, b) =>
+      new Date(b.metadata.createdAt).getTime() -
+      new Date(a.metadata.createdAt).getTime()
+  );
+}
+
+// Reads localStorage synchronously. Safe to call during render (not just in
+// an effect) because it never touches `window` on the server.
+function loadThreadsFromStorage(): SavedThread[] {
+  if (typeof window === "undefined") return [];
+  return sortByNewest(getThreads());
+}
+
 export default function SavedPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { t, locale } = useI18n();
-  const [threads, setThreads] = useState<SavedThread[]>([]);
+
+  // Seeded via a lazy initializer (not an effect) so the first render already
+  // has localStorage data and the empty state never flashes.
+  const [threads, setThreads] = useState<SavedThread[]>(loadThreadsFromStorage);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredThreads, setFilteredThreads] = useState<SavedThread[]>([]);
+  const [filteredThreads, setFilteredThreads] = useState<SavedThread[]>(loadThreadsFromStorage);
   const [threadToDelete, setThreadToDelete] = useState<SavedThread | null>(null);
   const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set());
 
   // Focus restoration ref for delete triggers
   const triggerButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    loadThreads();
-  }, []);
 
   useEffect(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -97,13 +112,7 @@ export default function SavedPage() {
   }, [searchQuery, threads]);
 
   const loadThreads = () => {
-    const loaded = getThreads();
-    // Sort by creation date, newest first
-    loaded.sort(
-      (a, b) =>
-        new Date(b.metadata.createdAt).getTime() -
-        new Date(a.metadata.createdAt).getTime()
-    );
+    const loaded = sortByNewest(getThreads());
     setThreads(loaded);
     setFilteredThreads(loaded);
   };
@@ -258,18 +267,16 @@ export default function SavedPage() {
       <Header />
       <main className="min-h-full bg-background text-foreground">
         <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
-          {/* Masthead & Global Actions */}
-          <div className="flex flex-row sm:items-center justify-between gap-4 pb-4 border-b">
+          <div className="flex flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 {t.history.title}
               </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                 {t.history.countSaved(threads.length)}
               </p>
             </div>
 
-            {/* Global Import & Export Actions */}
             <div className="flex items-center gap-2 flex-wrap">
               <input
                 ref={fileInputRef}
@@ -317,7 +324,6 @@ export default function SavedPage() {
             </div>
           </div>
 
-          {/* Search Bar */}
           {threads.length > 0 && (
             <div className="relative">
               <label htmlFor="library-search" className="sr-only">
@@ -340,7 +346,7 @@ export default function SavedPage() {
                   type="button"
                   onClick={() => setSearchQuery("")}
                   aria-label={t.history.clearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -348,7 +354,6 @@ export default function SavedPage() {
             </div>
           )}
 
-          {/* Thread List */}
           <div className="space-y-4">
             {filteredThreads.length > 0 ? (
               filteredThreads.map((thread) => {
@@ -359,14 +364,12 @@ export default function SavedPage() {
                     key={thread.metadata.id}
                     className="rounded-xl border bg-card p-5 sm:p-6 text-card-foreground shadow-sm space-y-4 transition-colors hover:border-foreground/20"
                   >
-                    {/* Top Header Row: Topic & Actions */}
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                       <div className="space-y-2 flex-1 min-w-0">
                         <h2 className="text-base sm:text-lg font-semibold text-foreground leading-snug">
                           {thread.metadata.topic}
                         </h2>
 
-                        {/* Metadata row */}
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground font-mono tabular-nums">
                           <div className="flex items-center gap-1.5">
                             <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
@@ -385,8 +388,7 @@ export default function SavedPage() {
                         </div>
                       </div>
 
-                      {/* Actions Toolbar */}
-                      <div className="flex items-center gap-1.5 self-start shrink-0 flex-wrap">
+                      <div className="flex items-center gap-2 self-start shrink-0 flex-wrap">
                         <Button
                           onClick={() => handleLoadToStudio(thread)}
                           variant="outline"
@@ -402,7 +404,7 @@ export default function SavedPage() {
                           onClick={() => handleDownloadSingleTXT(thread)}
                           variant="outline"
                           size="sm"
-                          className="min-h-[44px] px-2.5 text-xs font-mono font-medium"
+                          className="min-h-[44px] px-2.5 text-xs font-medium"
                           aria-label={`${t.history.downloadTxt}: ${thread.metadata.topic}`}
                           title={t.history.downloadTxt}
                         >
@@ -414,7 +416,7 @@ export default function SavedPage() {
                           onClick={() => handleDownloadSingleJSON(thread)}
                           variant="outline"
                           size="sm"
-                          className="min-h-[44px] px-2.5 text-xs font-mono font-medium"
+                          className="min-h-[44px] px-2.5 text-xs font-medium"
                           aria-label={`${t.history.downloadJson}: ${thread.metadata.topic}`}
                           title={t.history.downloadJson}
                         >
@@ -426,7 +428,7 @@ export default function SavedPage() {
                           onClick={() => handleCopy(thread)}
                           variant="ghost"
                           size="sm"
-                          className="min-h-[44px] min-w-[44px] px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                          className="min-h-[44px] sm:min-w-[44px] px-2.5 text-xs text-muted-foreground hover:text-foreground"
                           aria-label={t.history.copyThreadAria}
                           title={t.history.copyThreadAria}
                         >
@@ -445,7 +447,7 @@ export default function SavedPage() {
                           onClick={() => setThreadToDelete(thread)}
                           variant="ghost"
                           size="sm"
-                          className="min-h-[44px] min-w-[44px] px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="min-h-[44px] sm:min-w-[44px] px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                           aria-label={t.history.deleteThreadAria}
                           title={t.history.deleteThreadAria}
                         >
@@ -455,7 +457,6 @@ export default function SavedPage() {
                       </div>
                     </div>
 
-                    {/* Format & Style Badges */}
                     <div className="flex flex-wrap gap-1.5">
                       <Badge variant="secondary" className="text-xs font-normal">
                         {thread.metadata.format === "single"
@@ -485,7 +486,6 @@ export default function SavedPage() {
                       )}
                     </div>
 
-                    {/* Tweet Preview (Collapsed) or Full Tweets (Expanded) */}
                     {thread.tweets && thread.tweets.length > 0 && (
                       <div className="space-y-3">
                         {isExpanded ? (
@@ -522,8 +522,8 @@ export default function SavedPage() {
                                   idx === thread.tweets.length - 1 && (
                                     <div className="mt-2 pt-2 border-t border-border/70 rounded-md bg-background/50 p-2.5 text-xs space-y-1.5">
                                       <div className="flex items-center justify-between gap-2">
-                                        <span className="font-semibold text-primary flex items-center gap-1 text-[11px]">
-                                          <ShoppingBag className="h-3 w-3" />
+                                        <span className="min-w-0 break-words font-semibold text-primary flex items-center gap-1 text-[11px]">
+                                          <ShoppingBag className="h-3 w-3 shrink-0" />
                                           {t.affiliate.productLabel} {thread.metadata.affiliate.product.productName}
                                         </span>
                                         {thread.metadata.affiliate.product.price && (
@@ -533,7 +533,7 @@ export default function SavedPage() {
                                         )}
                                       </div>
                                       <a
-                                        href={thread.metadata.affiliate.product.affiliateUrl}
+                                        href={safeHttpUrl(thread.metadata.affiliate.product.affiliateUrl)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-[11px] text-muted-foreground hover:text-primary hover:underline truncate block font-mono"
@@ -583,7 +583,6 @@ export default function SavedPage() {
                 );
               })
             ) : (
-              /* Dual Empty States */
               <div className="rounded-xl border bg-card p-8 sm:p-12 text-center text-card-foreground">
                 {threads.length === 0 ? (
                   <div className="max-w-md mx-auto space-y-4">
@@ -615,7 +614,7 @@ export default function SavedPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="max-w-md mx-auto space-y-3">
+                  <div className="max-w-xl mx-auto space-y-3">
                     <div className="w-12 h-12 rounded-xl bg-secondary text-foreground mx-auto flex items-center justify-center">
                       <Search className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
                     </div>
@@ -643,7 +642,6 @@ export default function SavedPage() {
         </div>
       </main>
 
-      {/* Delete Confirmation Alert Dialog */}
       <AlertDialog
         open={!!threadToDelete}
         onOpenChange={(open) => {

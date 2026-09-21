@@ -4,6 +4,7 @@ import { SYSTEM_PROMPT_MICRO, buildRegenerateTweetPrompt } from "@/lib/ai/prompt
 import { validateAIConfig } from "@/config/ai-provider";
 import { regenerateTweetRequestSchema } from "@/lib/validations/generator";
 import { countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
+import { apiErrorResponse } from "@/lib/security/apiError";
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,14 +76,6 @@ export async function POST(request: NextRequest) {
       tweet: processedTweet,
     });
   } catch (error) {
-    console.error("Regenerate Tweet API Error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "An unknown error occurred";
-
-    return NextResponse.json(
-      { success: false, error: errorMessage },
-      { status: 500 },
-    );
+    return apiErrorResponse(error, "regenerate-tweet");
   }
 }

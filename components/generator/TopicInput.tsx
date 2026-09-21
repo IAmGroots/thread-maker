@@ -15,8 +15,8 @@ export function TopicInput({ value, onChange, error }: TopicInputProps) {
   const describedBy = error ? "topic-error topic-description" : "topic-description";
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
+    <div className="">
+      <div className="flex items-center justify-between mb-3">
         <Label htmlFor="topic" className="text-base font-semibold text-foreground">
           {t.composer.topicLabel}
         </Label>
@@ -34,12 +34,12 @@ export function TopicInput({ value, onChange, error }: TopicInputProps) {
         placeholder={t.composer.topicPlaceholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`min-h-[130px] resize-none text-base sm:text-sm leading-relaxed ${error ? "border-destructive focus-visible:ring-destructive" : ""}`}
+        className={`min-h-[130px] resize-none text-base sm:text-sm leading-relaxed mb-4 ${error ? "mb-2 border-destructive focus-visible:ring-destructive" : ""}`}
         aria-invalid={error ? "true" : "false"}
         aria-describedby={describedBy}
       />
       {error && (
-        <p id="topic-error" className="text-sm text-destructive font-medium" role="alert">
+        <p id="topic-error" className="text-sm text-destructive font-medium mb-2" role="alert">
           {error}
         </p>
       )}

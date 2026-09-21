@@ -93,13 +93,12 @@ export function AdvancedOptions({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         {t.composer.parameters}
       </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Content Language */}
         <div className="space-y-2">
           <Label htmlFor="language">{t.composer.contentLanguage}</Label>
           <Select
@@ -121,7 +120,6 @@ export function AdvancedOptions({
           </Select>
         </div>
 
-        {/* Content Goal */}
         <div className="space-y-2">
           <Label htmlFor="contentGoal">{t.composer.contentGoal}</Label>
           <Select
@@ -143,7 +141,6 @@ export function AdvancedOptions({
           </Select>
         </div>
 
-        {/* Target Audience */}
         <div className="space-y-2">
           <Label htmlFor="targetAudience">{t.composer.targetAudience}</Label>
           <Input
@@ -155,7 +152,6 @@ export function AdvancedOptions({
           />
         </div>
 
-        {/* Tweet Length */}
         <div className="space-y-2">
           <Label htmlFor="tweetLength">{t.composer.tweetLength}</Label>
           <Select
@@ -178,7 +174,6 @@ export function AdvancedOptions({
         </div>
       </div>
 
-      {/* Number of Tweets Slider */}
       <div className="space-y-3">
         <div className="flex justify-between items-center">
           <Label htmlFor="numberOfTweets">{t.composer.numberOfTweets}</Label>
@@ -200,7 +195,6 @@ export function AdvancedOptions({
         </p>
       </div>
 
-      {/* Number of Versions */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <Label>{t.composer.generateVersions}</Label>
@@ -237,12 +231,13 @@ export function AdvancedOptions({
         </p>
       </div>
 
-      {/* Toggle Options */}
       <div className="space-y-4">
-        <h4 className="text-sm font-medium">{t.composer.contentOptions}</h4>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          {t.composer.contentOptions}
+        </h3>
 
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <Label htmlFor="useHook" className="cursor-pointer">
               {t.composer.useHook}
             </Label>
@@ -258,7 +253,7 @@ export function AdvancedOptions({
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <Label htmlFor="useCTA" className="cursor-pointer">
               {t.composer.useCTA}
             </Label>
@@ -274,7 +269,7 @@ export function AdvancedOptions({
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <Label htmlFor="includeEmojis" className="cursor-pointer">
               {t.composer.includeEmojis}
             </Label>
@@ -290,7 +285,7 @@ export function AdvancedOptions({
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <Label htmlFor="includeHashtags" className="cursor-pointer">
               {t.composer.includeHashtags}
             </Label>
@@ -306,7 +301,6 @@ export function AdvancedOptions({
         </div>
       </div>
 
-      {/* Custom Hashtags */}
       {includeHashtags && (
         <div className="space-y-2">
           <Label htmlFor="customHashtags">{t.composer.customHashtags}</Label>
@@ -335,7 +329,7 @@ export function AdvancedOptions({
                   <button
                     onClick={() => removeHashtag(tag)}
                     aria-label={`Remove #${tag}`}
-                    className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                    className="relative ml-1 rounded-full p-0.5 hover:bg-secondary-foreground/20 before:absolute before:-inset-3 before:content-['']"
                   >
                     <X className="h-3 w-3" aria-hidden="true" />
                   </button>

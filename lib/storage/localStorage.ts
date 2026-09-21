@@ -61,7 +61,6 @@ export function saveThread(thread: SavedThread): boolean {
     );
 
     if (existing.length >= maxThreads) {
-      // Remove the oldest thread
       existing.shift();
     }
 
@@ -174,7 +173,6 @@ export function slugifyTopic(text: string): string {
   );
 }
 
-// Export single thread to TXT format with complete content and metadata
 export function exportSingleThreadToTXT(thread: SavedThread): string {
   let output = `==================================================\n`;
   output += `THREAD: ${thread.metadata.topic}\n`;
@@ -198,7 +196,6 @@ export function exportSingleThreadToTXT(thread: SavedThread): string {
     output += `PRODUK AFILIASI:\n`;
     output += `Nama Produk: ${prod.productName}\n`;
     output += `Link Afiliasi: ${prod.affiliateUrl}\n`;
-    if (prod.productUrl) output += `Link Produk: ${prod.productUrl}\n`;
     if (prod.price) output += `Harga: ${prod.price}\n`;
     if (prod.disclosureTag) output += `Tag: ${prod.disclosureTag}\n`;
     if (prod.storyAngle) output += `Sudut Pandang: ${prod.storyAngle}\n`;
@@ -208,7 +205,6 @@ export function exportSingleThreadToTXT(thread: SavedThread): string {
   return output;
 }
 
-// Export single thread to JSON format with complete content and metadata
 export function exportSingleThreadToJSON(thread: SavedThread): string {
   return JSON.stringify(thread, null, 2);
 }
@@ -245,12 +241,11 @@ export function exportToTXT(threadsList?: SavedThread[]): string {
       const prod = thread.metadata.affiliate.product;
       output += `--------------------------------------------------\n`;
       output += `PRODUK AFILIASI:\n`;
-      output += `Nama Produk: ${prod.productName}\n`;
-      output += `Link Afiliasi: ${prod.affiliateUrl}\n`;
-      if (prod.productUrl) output += `Link Produk: ${prod.productUrl}\n`;
-      if (prod.price) output += `Harga: ${prod.price}\n`;
-      if (prod.disclosureTag) output += `Tag: ${prod.disclosureTag}\n`;
-      if (prod.storyAngle) output += `Sudut Pandang: ${prod.storyAngle}\n`;
+    output += `Nama Produk: ${prod.productName}\n`;
+    output += `Link Afiliasi: ${prod.affiliateUrl}\n`;
+    if (prod.price) output += `Harga: ${prod.price}\n`;
+    if (prod.disclosureTag) output += `Tag: ${prod.disclosureTag}\n`;
+    if (prod.storyAngle) output += `Sudut Pandang: ${prod.storyAngle}\n`;
     }
 
     output += `\n\n`;
@@ -259,7 +254,6 @@ export function exportToTXT(threadsList?: SavedThread[]): string {
   return output;
 }
 
-// Helper to normalize raw tweet array/objects to structured Tweet[]
 function normalizeTweets(rawTweets: unknown[]): Tweet[] {
   return rawTweets
     .map((item, idx) => {
@@ -291,7 +285,6 @@ function normalizeTweets(rawTweets: unknown[]): Tweet[] {
     .sort((a, b) => a.order - b.order);
 }
 
-// Normalize imported parsed JSON to SavedThread[]
 function normalizeImportedJSON(parsed: unknown): SavedThread[] {
   if (!parsed) return [];
 
@@ -433,7 +426,6 @@ function parseTXTContent(content: string, filename: string = ""): SavedThread[] 
 
     const affiliateProdMatch = block.match(/(?:Nama Produk|Product Name):\s*([^\n]+)/i);
     const affiliateUrlMatch = block.match(/(?:Link Afiliasi|Affiliate Link):\s*([^\n]+)/i);
-    const affiliateItemUrlMatch = block.match(/(?:Link Produk|Product Link):\s*([^\n]+)/i);
     const affiliatePriceMatch = block.match(/(?:Harga|Price):\s*([^\n]+)/i);
     const affiliateTagMatch = block.match(/(?:Tag|Disclosure):\s*([^\n]+)/i);
     const affiliateAngleMatch = block.match(/(?:Sudut Pandang|Story Angle):\s*([^\n]+)/i);
@@ -445,7 +437,6 @@ function parseTXTContent(content: string, filename: string = ""): SavedThread[] 
         product: {
           productName: affiliateProdMatch[1].trim(),
           affiliateUrl: affiliateUrlMatch[1].trim(),
-          productUrl: affiliateItemUrlMatch ? affiliateItemUrlMatch[1].trim() : undefined,
           price: affiliatePriceMatch ? affiliatePriceMatch[1].trim() : undefined,
           disclosureTag: affiliateTagMatch ? affiliateTagMatch[1].trim() : undefined,
           storyAngle: affiliateAngleMatch ? (affiliateAngleMatch[1].trim() as any) : "problem-solution",
@@ -534,7 +525,6 @@ function parseTXTContent(content: string, filename: string = ""): SavedThread[] 
   return results;
 }
 
-// Smart auto-detect parser for imported files (JSON or TXT)
 export function parseImportFile(
   rawContent: string,
   filename: string = "",
@@ -563,7 +553,6 @@ export function parseImportFile(
   return parseTXTContent(content, filename);
 }
 
-// Import threads into localStorage
 export function importThreads(newThreads: SavedThread[]): {
   importedCount: number;
   totalCount: number;

@@ -39,7 +39,6 @@ export const affiliateProductSchema = z.object({
     .trim()
     .min(1, "Product name is required")
     .max(120, "Product name is too long (max 120 characters)"),
-  productUrl: safeUrlSchema.optional().or(z.literal("")),
   affiliateUrl: safeUrlSchema.pipe(
     z.string().min(1, "Affiliate URL is required")
   ),

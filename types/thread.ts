@@ -1,4 +1,3 @@
-// Tweet structure
 export interface Tweet {
   id: string;
   content: string;
@@ -8,10 +7,8 @@ export interface Tweet {
   hashtags: string[];
 }
 
-// Tweet length preference
 export type TweetLength = "short" | "medium" | "long";
 
-// Generator settings (subset of config)
 export interface GeneratorSettings {
   numberOfTweets: number;
   numberOfVersions: number;
@@ -23,7 +20,6 @@ export interface GeneratorSettings {
   tweetLength: TweetLength;
 }
 
-// Thread metadata
 export interface ThreadMetadata {
   id: string;
   createdAt: string;
@@ -39,7 +35,6 @@ export interface ThreadMetadata {
   affiliate?: AffiliateConfig;
 }
 
-// Generated thread
 export interface GeneratedThread {
   metadata: ThreadMetadata;
   tweets: Tweet[];
@@ -48,14 +43,12 @@ export interface GeneratedThread {
   version: number;
 }
 
-// Saved thread (with additional fields)
 export interface SavedThread extends GeneratedThread {
   isFavorite: boolean;
   tags: string[];
   notes: string;
 }
 
-// Writing styles
 export type WritingStyle =
   | "professional"
   | "casual"
@@ -67,7 +60,6 @@ export type WritingStyle =
   | "inspirational"
   | "news";
 
-// Tone options
 export type Tone =
   | "friendly"
   | "confident"
@@ -78,7 +70,6 @@ export type Tone =
   | "formal"
   | "sarcastic";
 
-// Content goals
 export type ContentGoal =
   | "engagement"
   | "personal-branding"
@@ -98,7 +89,6 @@ export type AffiliateCtaPlacement = "last_tweet" | "reply";
 
 export interface AffiliateProduct {
   productName: string;
-  productUrl?: string;
   affiliateUrl: string;
   price?: string;
   keyPoints?: string[];
@@ -112,10 +102,8 @@ export interface AffiliateConfig {
   product?: AffiliateProduct;
 }
 
-// Language options
 export type Language = "id" | "en";
 
-// Display labels for UI
 export const WRITING_STYLE_LABELS: Record<WritingStyle, string> = {
   professional: "Professional",
   casual: "Casual",

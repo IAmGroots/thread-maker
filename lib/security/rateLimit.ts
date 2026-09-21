@@ -54,10 +54,20 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
     limit: 10, // 10 requests per minute
     windowMs: 60 * 1000,
   },
-  "/api/affiliate/resolve": {
-    limit: 15,
+  "/api/suggest-topics": {
+    limit: 5,
     windowMs: 60 * 1000,
   },
+};
+
+/**
+ * Fail-closed default for any /api route NOT listed in RATE_LIMIT_CONFIGS.
+ * Unknown (possibly new AI) endpoints get a stricter budget than the known
+ * cheap ones, so a forgotten registration cannot leave a hole.
+ */
+const DEFAULT_RATE_LIMIT: RateLimitConfig = {
+  limit: 5,
+  windowMs: 60 * 1000,
 };
 
 export function checkRateLimit(
@@ -66,16 +76,12 @@ export function checkRateLimit(
 ): RateLimitResult {
   cleanup();
 
-  const config = RATE_LIMIT_CONFIGS[pathname] || {
-    limit: 10,
-    windowMs: 60 * 1000,
-  };
+  const config = RATE_LIMIT_CONFIGS[pathname] || DEFAULT_RATE_LIMIT;
 
   const key = `${ip}:${pathname}`;
   const now = Date.now();
   const record = rateLimitStore.get(key) || { timestamps: [] };
 
-  // Remove timestamps outside the current window
   const validTimestamps = record.timestamps.filter(
     (ts) => now - ts < config.windowMs,
   );

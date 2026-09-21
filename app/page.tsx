@@ -16,7 +16,6 @@ export default function HomePage() {
       <main className="bg-background text-foreground">
         <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-            {/* Left: the desk statement */}
             <div className="lg:col-span-5 space-y-6">
               <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-muted-foreground">
                 {t.landing.eyebrow}
@@ -63,7 +62,6 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Right: a sample thread, the "page" on the desk */}
             <div className="lg:col-span-7">
               <article className="rounded-xl border bg-card p-6 sm:p-8 text-card-foreground shadow-sm space-y-5">
                 <div className="space-y-2 pb-4 border-b">

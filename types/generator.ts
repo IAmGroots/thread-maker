@@ -17,7 +17,6 @@ export type {
   AffiliateCtaPlacement,
 };
 
-// Generator configuration
 export interface GeneratorConfig {
   topic: string;
   format: "single" | "thread";
@@ -37,7 +36,6 @@ export interface GeneratorConfig {
   affiliate?: AffiliateConfig;
 }
 
-// Default generator settings
 export const DEFAULT_GENERATOR_CONFIG: GeneratorConfig = {
   topic: "",
   format: "thread",
@@ -59,7 +57,6 @@ export const DEFAULT_GENERATOR_CONFIG: GeneratorConfig = {
   },
 };
 
-// Generator settings (subset of config)
 export interface GeneratorSettings {
   numberOfTweets: number;
   numberOfVersions: number;
@@ -71,12 +68,10 @@ export interface GeneratorSettings {
   tweetLength: TweetLength;
 }
 
-// AI API request
 export interface GenerateRequest {
   config: GeneratorConfig;
 }
 
-// AI API response
 export interface GenerateResponse {
   success: boolean;
   threads: Array<{
@@ -88,7 +83,6 @@ export interface GenerateResponse {
   error?: string;
 }
 
-// Transform request types
 export interface TransformStyleRequest {
   threadId: string;
   newStyle: WritingStyle;

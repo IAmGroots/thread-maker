@@ -7,7 +7,7 @@ import { Tweet, AffiliateProduct } from "@/types/thread";
 import { Copy, Edit2, RefreshCw, Save, SlidersHorizontal, ShoppingBag, Link as LinkIcon, Check, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
-import { countTwitterChars, cn, copyToClipboard } from "@/lib/utils";
+import { countTwitterChars, cn, copyToClipboard, safeHttpUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 interface TweetCardProps {
@@ -46,7 +46,9 @@ export function TweetCard({
   const editButtonRef = useRef<HTMLButtonElement>(null);
 
   const editing = externalIsEditing ?? isEditing;
-  const targetAffiliateUrl = affiliateProduct?.affiliateUrl || affiliateUrl;
+  const targetAffiliateUrl = safeHttpUrl(
+    affiliateProduct?.affiliateUrl || affiliateUrl,
+  );
 
   const handleCopyAffiliateLink = async () => {
     if (!targetAffiliateUrl) return;
@@ -110,7 +112,6 @@ export function TweetCard({
 
   return (
     <article className="rounded-xl border bg-card p-4 sm:p-5 text-card-foreground space-y-3.5 transition-colors">
-      {/* Top Header Row: Order (left) & Actions (right) */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span
@@ -211,7 +212,6 @@ export function TweetCard({
         )}
       </div>
 
-      {/* Tweet Body or Inline Editor */}
       {editing ? (
         <div className="space-y-3">
           <Textarea
@@ -254,7 +254,6 @@ export function TweetCard({
         </div>
       )}
 
-      {/* Bottom Meter Row: Hashtags (left) & Monospace Character Meter (right) */}
       {!editing && (
         <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
           <div className="flex flex-wrap gap-1.5">

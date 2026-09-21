@@ -6,10 +6,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function generateId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
+  const c = globalThis.crypto;
+  if (c?.randomUUID) {
+    return c.randomUUID();
   }
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  if (c?.getRandomValues) {
+    // Secure fallback when randomUUID is unavailable (older runtimes).
+    const bytes = c.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  throw new Error(
+    "Secure random number generation is unavailable in this environment.",
+  );
 }
 
 export function formatDate(date: string | Date, locale: string = "id"): string {
@@ -27,6 +35,22 @@ export function formatDate(date: string | Date, locale: string = "id"): string {
 export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + "...";
+}
+
+/**
+ * Return the URL only when it is a plain http/https address, else undefined.
+ * Guards `href` sinks against `javascript:`/`data:` values from user input.
+ */
+export function safeHttpUrl(url: string | undefined | null): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+      ? parsed.href
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 // Twitter counts every URL as 23 characters regardless of its real length.

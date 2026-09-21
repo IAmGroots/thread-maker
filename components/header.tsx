@@ -63,7 +63,7 @@ export function Header() {
             <span className="hidden sm:inline">{t.header.savedLibrary}</span>
             <span className="sm:hidden">{t.header.savedLibraryShort}</span>
           </Link>
-          <div className="ml-0 pl-1 border-l sm:ml-2 sm:pl-2 flex items-center gap-1 sm:gap-1.5 min-h-[44px]">
+          <div className="pl-1 sm:border-l sm:pl-2 flex items-center gap-1 sm:gap-1.5 min-h-[44px]">
             <LanguageSwitcher />
             <ThemeToggle />
           </div>

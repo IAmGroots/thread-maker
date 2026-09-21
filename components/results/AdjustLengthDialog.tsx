@@ -88,7 +88,6 @@ export function AdjustLengthDialog({
             </div>
           )}
 
-          {/* Select which tweet if thread has more than 1 tweet */}
           {tweets.length > 1 && (
             <div className="space-y-2">
               <Label htmlFor="adjust-tweet-select">
@@ -116,7 +115,6 @@ export function AdjustLengthDialog({
             </div>
           )}
 
-          {/* Preview of target tweet snippet */}
           {currentSelectedTweet && (
             <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
               <span className="font-semibold text-foreground font-mono block mb-1">
@@ -128,7 +126,6 @@ export function AdjustLengthDialog({
             </div>
           )}
 
-          {/* Direction options */}
           <div className="space-y-2">
             <Label>{t.adjustLength.direction}</Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="radiogroup">
