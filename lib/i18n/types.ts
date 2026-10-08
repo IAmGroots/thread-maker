@@ -26,10 +26,44 @@ export interface TranslationDictionary {
     generator: string;
     savedLibrary: string;
     savedLibraryShort: string;
+    settings: string;
     navAria: string;
     themeToggle: string;
     languageSwitch: string;
     languageName: string;
+  };
+  auth: {
+    signInHeading: string;
+    signInDescription: string;
+    continueWithGoogle: string;
+    redirecting: string;
+    signIn: string;
+    signOut: string;
+    signingOut: string;
+    accountMenuAria: (name: string) => string;
+    authFailed: string;
+  };
+  settings: {
+    title: string;
+    subtitle: string;
+    connectionsHeading: string;
+    threadsTitle: string;
+    threadsDescription: string;
+    connectThreads: string;
+    connecting: string;
+    disconnect: string;
+    disconnecting: string;
+    connectedAs: (username: string) => string;
+    tokenExpires: (date: string) => string;
+    noAccounts: string;
+    noAccountsHint: string;
+    connectedToast: string;
+    disconnectedToast: string;
+    disconnectFailed: string;
+    errors: {
+      denied: string;
+      invalid_state: string;
+    };
   };
   landing: {
     eyebrow: string;

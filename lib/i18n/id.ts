@@ -26,10 +26,48 @@ export const id: TranslationDictionary = {
     generator: "Generator",
     savedLibrary: "Tersimpan",
     savedLibraryShort: "Tersimpan",
+    settings: "Pengaturan",
     navAria: "Navigasi Utama",
     themeToggle: "Ganti tema",
     languageSwitch: "Ganti bahasa antarmuka",
     languageName: "Bahasa Indonesia",
+  },
+  auth: {
+    signInHeading: "Masuk ke Threvo",
+    signInDescription:
+      "Masuk dengan Google agar draf dan pengaturan tersimpan di akun ini.",
+    continueWithGoogle: "Lanjutkan dengan Google",
+    redirecting: "Mengalihkan...",
+    signIn: "Masuk",
+    signOut: "Keluar",
+    signingOut: "Sedang keluar...",
+    accountMenuAria: (name) => `Menu akun untuk ${name}`,
+    authFailed: "Gagal masuk. Silakan coba lagi.",
+  },
+  settings: {
+    title: "Pengaturan",
+    subtitle: "Kelola akun dan platform yang terhubung.",
+    connectionsHeading: "Koneksi",
+    threadsTitle: "Threads",
+    threadsDescription:
+      "Hubungkan akun Threads untuk mempublikasikan thread tanpa keluar dari Threvo.",
+    connectThreads: "Hubungkan Threads",
+    connecting: "Mengalihkan...",
+    disconnect: "Putuskan",
+    disconnecting: "Memutuskan...",
+    connectedAs: (username) => `Terhubung sebagai @${username}`,
+    tokenExpires: (date) => `Akses kedaluwarsa ${date}`,
+    noAccounts: "Belum ada akun Threads yang terhubung.",
+    noAccountsHint:
+      "Hubungkan satu untuk mempublikasikan langsung. Sebelum Meta menyetujui aplikasi, hanya akun yang ditambahkan sebagai tester yang bisa mempublikasikan.",
+    connectedToast: "Akun Threads terhubung.",
+    disconnectedToast: "Akun Threads diputuskan.",
+    disconnectFailed: "Gagal memutuskan. Silakan coba lagi.",
+    errors: {
+      denied: "Anda membatalkan koneksi Threads. Tidak ada yang berubah.",
+      invalid_state:
+        "Percobaan koneksi tidak dapat diverifikasi. Silakan mulai lagi dari halaman ini.",
+    },
   },
   landing: {
     eyebrow: "Tulis di atas kertas, terbitkan sebagai thread",

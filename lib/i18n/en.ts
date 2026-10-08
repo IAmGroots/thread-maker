@@ -26,10 +26,48 @@ export const en: TranslationDictionary = {
     generator: "Generator",
     savedLibrary: "Saved",
     savedLibraryShort: "Saved",
+    settings: "Settings",
     navAria: "Main Navigation",
     themeToggle: "Toggle theme",
     languageSwitch: "Switch language",
     languageName: "English",
+  },
+  auth: {
+    signInHeading: "Sign in to Threvo",
+    signInDescription:
+      "Sign in with Google to keep your drafts and settings on this account.",
+    continueWithGoogle: "Continue with Google",
+    redirecting: "Redirecting...",
+    signIn: "Sign in",
+    signOut: "Sign out",
+    signingOut: "Signing out...",
+    accountMenuAria: (name) => `Account menu for ${name}`,
+    authFailed: "Sign in failed. Please try again.",
+  },
+  settings: {
+    title: "Settings",
+    subtitle: "Manage your account and connected platforms.",
+    connectionsHeading: "Connections",
+    threadsTitle: "Threads",
+    threadsDescription:
+      "Connect a Threads account to publish threads without leaving Threvo.",
+    connectThreads: "Connect Threads",
+    connecting: "Redirecting...",
+    disconnect: "Disconnect",
+    disconnecting: "Disconnecting...",
+    connectedAs: (username) => `Connected as @${username}`,
+    tokenExpires: (date) => `Access expires ${date}`,
+    noAccounts: "No Threads account connected yet.",
+    noAccountsHint:
+      "Connect one to publish directly. Until Meta approves the app, only accounts added as testers can publish.",
+    connectedToast: "Threads account connected.",
+    disconnectedToast: "Threads account disconnected.",
+    disconnectFailed: "Could not disconnect. Please try again.",
+    errors: {
+      denied: "You cancelled the Threads connection. Nothing was changed.",
+      invalid_state:
+        "The connection attempt could not be verified. Please start again from this page.",
+    },
   },
   landing: {
     eyebrow: "Write on paper, post as threads",

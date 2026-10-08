@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/security/rateLimit";
+import { updateSession } from "@/lib/supabase/middleware";
 
 /**
  * Which proxy header (if any) is trusted to carry the real client IP.
@@ -90,8 +91,13 @@ function isAllowedOrigin(request: NextRequest): boolean {
   return false;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  // Refresh Supabase auth session on every request so cookies stay fresh.
+  // Must run before any response is returned so Set-Cookie headers propagate.
+  const response = NextResponse.next();
+  await updateSession(request, response);
 
   if (pathname.startsWith("/api/")) {
     if (!isAllowedOrigin(request)) {
@@ -126,16 +132,16 @@ export function middleware(request: NextRequest) {
       );
     }
 
-    const response = NextResponse.next();
     response.headers.set("X-RateLimit-Limit", String(rateLimit.limit));
     response.headers.set("X-RateLimit-Remaining", String(rateLimit.remaining));
     response.headers.set("X-RateLimit-Reset", String(rateLimit.resetSeconds));
-    return response;
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

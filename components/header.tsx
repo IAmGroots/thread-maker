@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { UserMenu } from "@/components/auth/UserMenu";
 
 export function Header() {
   const pathname = usePathname();
@@ -66,6 +67,7 @@ export function Header() {
           <div className="pl-1 sm:border-l sm:pl-2 flex items-center gap-1 sm:gap-1.5 min-h-[44px]">
             <LanguageSwitcher />
             <ThemeToggle />
+            <UserMenu />
           </div>
         </nav>
       </div>

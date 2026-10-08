@@ -122,3 +122,5 @@ Mobile is a designed state, not a squeezed desktop. The layout reflows at the na
 - **Why the 5/7 asymmetry?** It frames the composer as the desk and the preview as the page, which is the product's actual workflow.
 - **Why two elevation tiers?** To create one focal point per screen instead of five equally-weighted boxes.
 - **Why uppercase eyebrows?** As the editorial identifier of the paper metaphor, scoped to section labels only.
+- **Why is the login panel flat, not elevated?** It is supporting furniture, not a work surface: no shadow, a hairline border, so elevation stays reserved for the composer and thread preview (R-12).
+- **Why is the login wordmark plain text, not the mono eyebrow style?** Mono is metadata only (character counts, order); the brand name is not metadata, so it uses the same plain type as the rest of the UI (R-06).
