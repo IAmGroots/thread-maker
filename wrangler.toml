@@ -10,3 +10,9 @@ binding = "ASSETS"
 [[rules]]
 type = "ESModule"
 globs = ["**/*.js"]
+
+# Scheduled publishing: hit the cron endpoint every minute. The Worker fetches
+# its own route, which is guarded by the CRON_SECRET worker secret.
+# (Alternatively use an external scheduler such as cron-job.org.)
+[triggers]
+crons = ["* * * * *"]

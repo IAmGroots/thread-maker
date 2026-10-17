@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 
 interface TweetActionsProps {
   onCopyAll?: () => void;
@@ -20,6 +21,7 @@ interface TweetActionsProps {
   onTransform?: () => void;
   onAdjustLength?: () => void;
   isLoading?: boolean;
+  postToThreadsSlot?: ReactNode;
 }
 
 export function TweetActions({
@@ -30,12 +32,15 @@ export function TweetActions({
   onTransform,
   onAdjustLength,
   isLoading = false,
+  postToThreadsSlot,
 }: TweetActionsProps) {
   const { t } = useI18n();
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-5 border-t border-border/60">
       <div className="flex flex-wrap items-center gap-2">
+        {postToThreadsSlot}
+
         {onSave && (
           <Button
             onClick={onSave}

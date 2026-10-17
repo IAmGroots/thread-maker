@@ -8,6 +8,7 @@ import { copyToClipboard } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
 import { ShoppingBag } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface ThreadPreviewProps {
   thread: GeneratedThread;
@@ -20,6 +21,7 @@ interface ThreadPreviewProps {
   onAdjustLengthTweet?: (tweetIndex: number) => void;
   onExport?: () => void;
   isLoading?: boolean;
+  postToThreadsSlot?: ReactNode;
 }
 
 export function ThreadPreview({
@@ -33,6 +35,7 @@ export function ThreadPreview({
   onAdjustLengthTweet,
   onExport,
   isLoading = false,
+  postToThreadsSlot,
 }: ThreadPreviewProps) {
   const { toast } = useToast();
   const { t } = useI18n();
@@ -145,6 +148,7 @@ export function ThreadPreview({
         onExport={onExport}
         onCopyAll={handleCopyAll}
         isLoading={isLoading}
+        postToThreadsSlot={postToThreadsSlot}
       />
     </div>
   );

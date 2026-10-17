@@ -182,7 +182,7 @@ export function AdvancedOptions({
         <Slider
           id="numberOfTweets"
           min={1}
-          max={25}
+          max={15}
           step={1}
           value={[numberOfTweets]}
           onValueChange={(val) => onNumberOfTweetsChange(val[0])}

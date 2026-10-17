@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Loader2, PenTool } from "lucide-react";
 import { TopicInput } from "@/components/generator/TopicInput";
@@ -13,16 +14,18 @@ import { InspirationPrompts } from "@/components/results/InspirationPrompts";
 import { ThreadSkeletonLoader } from "@/components/results/ThreadSkeletonLoader";
 import { TransformDialog } from "@/components/results/TransformDialog";
 import { AdjustLengthDialog } from "@/components/results/AdjustLengthDialog";
+import { PostToThreadsButton } from "@/components/results/PostToThreadsButton";
 import { DEFAULT_GENERATOR_CONFIG, GeneratorConfig } from "@/types/generator";
 import { GeneratedThread, SavedThread, Tweet, WritingStyle, Tone } from "@/types/thread";
 import { generateId, countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
-import { saveThread, downloadFile, exportSingleThreadToTXT } from "@/lib/storage/localStorage";
+import { saveThread, downloadFile, exportSingleThreadToTXT } from "@/lib/storage/threads";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
 
 export default function GeneratorPage() {
   const { toast } = useToast();
   const { t } = useI18n();
+  const router = useRouter();
   const [config, setConfig] = useState<GeneratorConfig>(
     DEFAULT_GENERATOR_CONFIG,
   );
@@ -40,6 +43,12 @@ export default function GeneratorPage() {
   const [isAdjustLengthOpen, setIsAdjustLengthOpen] = useState(false);
   const [isAdjustLengthLoading, setIsAdjustLengthLoading] = useState(false);
   const [adjustLengthTargetIndex, setAdjustLengthTargetIndex] = useState(0);
+
+  // Tracks the DB id of a saved thread per generated version, so publishing
+  // right after generating does not save the same thread twice.
+  const [savedThreadIdByVersion, setSavedThreadIdByVersion] = useState<
+    Record<number, string>
+  >({});
 
   // Check if a saved thread was requested to be loaded from Saved Library
   useEffect(() => {
@@ -207,26 +216,34 @@ export default function GeneratorPage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const threadToSave = generatedThreads[activeVersion - 1];
     if (!threadToSave) return;
 
-    const saved = saveThread({
-      ...threadToSave,
-      isFavorite: false,
-      tags: [],
-      notes: "",
-    });
-
-    if (saved) {
-      toast({
-        title: t.toasts.saved,
-        description: t.toasts.savedDesc,
+    try {
+      const saved = await saveThread({
+        ...threadToSave,
+        isFavorite: false,
+        tags: [],
+        notes: "",
       });
-    } else {
+
+      if (saved) {
+        toast({
+          title: t.toasts.saved,
+          description: t.toasts.savedDesc,
+        });
+      } else {
+        toast({
+          title: t.toasts.saveFailed,
+          description: t.toasts.saveFailedDesc,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
         title: t.toasts.saveFailed,
-        description: t.toasts.saveFailedDesc,
+        description: error instanceof Error ? error.message : t.toasts.saveFailedDesc,
         variant: "destructive",
       });
     }
@@ -466,6 +483,31 @@ export default function GeneratorPage() {
     }
   };
 
+  const currentThread = generatedThreads[activeVersion - 1];
+
+  // Save the active version to the library if it has not been saved yet, and
+  // return the database id. Publishing depends on a saved row so the publish
+  // log can reference it.
+  const ensureThreadSaved = async (): Promise<string | undefined> => {
+    const existing = savedThreadIdByVersion[activeVersion];
+    if (existing) return existing;
+    const threadToSave = generatedThreads[activeVersion - 1];
+    if (!threadToSave) return undefined;
+
+    const saved = await saveThread({
+      ...threadToSave,
+      isFavorite: false,
+      tags: [],
+      notes: "",
+    });
+    if (!saved) return undefined;
+    setSavedThreadIdByVersion((prev) => ({
+      ...prev,
+      [activeVersion]: saved.metadata.id,
+    }));
+    return saved.metadata.id;
+  };
+
   const handleExport = () => {
     const threadToExport = generatedThreads[activeVersion - 1];
     if (!threadToExport) return;
@@ -484,8 +526,6 @@ export default function GeneratorPage() {
       description: t.toasts.exportedTxtDesc,
     });
   };
-
-  const currentThread = generatedThreads[activeVersion - 1];
 
   return (
     <>
@@ -628,6 +668,17 @@ export default function GeneratorPage() {
                       onExport={handleExport}
                       isLoading={
                         isLoading || isTransformLoading || isAdjustLengthLoading
+                      }
+                      postToThreadsSlot={
+                        <PostToThreadsButton
+                          tweets={currentThread.tweets.map((tw) => tw.content)}
+                          savedThreadId={savedThreadIdByVersion[activeVersion]}
+                          onSaved={async () => {
+                            await ensureThreadSaved();
+                            toast({ description: t.publish.savedBeforePublish });
+                            router.refresh();
+                          }}
+                        />
                       }
                     />
                   </VersionTabs>

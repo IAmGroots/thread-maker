@@ -46,7 +46,7 @@ export const generateConfigSchema = z.object({
     .min(1, "Topic is required")
     .max(1000, "Topic cannot exceed 1000 characters"),
   format: formatEnum.default("thread"),
-  numberOfTweets: z.number().int().min(1).max(25).default(5),
+  numberOfTweets: z.number().int().min(1).max(15).default(5),
   numberOfVersions: z.number().int().min(1).max(5).default(1),
   style: writingStyleEnum.default("casual"),
   tone: toneEnum.default("friendly"),
@@ -86,15 +86,15 @@ export const transformRequestSchema = z.object({
   tweets: z
     .array(z.string().trim().min(1).max(1000))
     .min(1, "At least one tweet is required")
-    .max(25, "Cannot transform more than 25 tweets at once"),
+    .max(15, "Cannot transform more than 15 tweets at once"),
   newStyle: writingStyleEnum,
   newTone: toneEnum,
 });
 
 export const regenerateTweetRequestSchema = z.object({
   threadId: z.string().optional(),
-  tweetIndex: z.number().int().min(0).max(25),
+  tweetIndex: z.number().int().min(0).max(15),
   context: z
     .array(z.string().trim().max(1000))
-    .max(25, "Context cannot exceed 25 tweets"),
+    .max(15, "Context cannot exceed 15 tweets"),
 });

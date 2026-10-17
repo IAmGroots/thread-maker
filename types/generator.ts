@@ -20,7 +20,7 @@ export type {
 export interface GeneratorConfig {
   topic: string;
   format: "single" | "thread";
-  numberOfTweets: number; // 1-25
+  numberOfTweets: number; // 1-15
   numberOfVersions: number; // 1-5
   style: WritingStyle;
   tone: Tone;

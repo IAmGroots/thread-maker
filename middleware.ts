@@ -94,6 +94,13 @@ function isAllowedOrigin(request: NextRequest): boolean {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  // Cron endpoints are called by an external scheduler, not a browser: they
+  // have no Origin/Referer and must not be rate-limited per IP. They are
+  // authenticated separately with CRON_SECRET inside the route handler.
+  if (pathname.startsWith("/api/cron/")) {
+    return NextResponse.next();
+  }
+
   // Refresh Supabase auth session on every request so cookies stay fresh.
   // Must run before any response is returned so Set-Cookie headers propagate.
   const response = NextResponse.next();

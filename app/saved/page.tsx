@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Header } from "@/components/header";
 import { SavedThread } from "@/types/thread";
+import { createClient } from "@/lib/supabase/client";
 import {
-  getThreads,
+  listThreads,
   deleteThread,
   exportToJSON,
   exportToTXT,
@@ -19,9 +27,14 @@ import {
   parseImportFile,
   importThreads,
   slugifyTopic,
-} from "@/lib/storage/localStorage";
+} from "@/lib/storage/threads";
 import { formatDate, truncateText, safeHttpUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useThreadsAccounts } from "@/hooks/use-threads-accounts";
+import { PostToThreadsButton } from "@/components/results/PostToThreadsButton";
+import { SchedulePostDialog } from "@/components/saved/SchedulePostDialog";
+import { ScheduledList } from "@/components/saved/ScheduledList";
+import { CheckCircle2, Circle } from "lucide-react";
 import {
   Search,
   Trash2,
@@ -37,6 +50,8 @@ import {
   ChevronDown,
   ChevronUp,
   ShoppingBag,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { copyToClipboard } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -60,29 +75,72 @@ function sortByNewest(list: SavedThread[]) {
   );
 }
 
-// Reads localStorage synchronously. Safe to call during render (not just in
-// an effect) because it never touches `window` on the server.
-function loadThreadsFromStorage(): SavedThread[] {
-  if (typeof window === "undefined") return [];
-  return sortByNewest(getThreads());
-}
-
 export default function SavedPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { t, locale } = useI18n();
 
-  // Seeded via a lazy initializer (not an effect) so the first render already
-  // has localStorage data and the empty state never flashes.
-  const [threads, setThreads] = useState<SavedThread[]>(loadThreadsFromStorage);
+  const [threads, setThreads] = useState<SavedThread[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredThreads, setFilteredThreads] = useState<SavedThread[]>(loadThreadsFromStorage);
+  const [filteredThreads, setFilteredThreads] = useState<SavedThread[]>([]);
   const [threadToDelete, setThreadToDelete] = useState<SavedThread | null>(null);
   const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set());
+
+  // Auth + data loading states (R-27: loading, error, empty are all designed).
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Selected Threads account drives the per-account "posted" badge.
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+  const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0);
+  const {
+    accounts,
+    publishedThreadIds,
+    refresh: refreshAccounts,
+  } = useThreadsAccounts(selectedAccountId || undefined);
 
   // Focus restoration ref for delete triggers
   const triggerButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadThreads = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const loaded = sortByNewest(await listThreads());
+      setThreads(loaded);
+      setFilteredThreads(loaded);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "unknown");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Require authentication: the library lives in the database now.
+  useEffect(() => {
+    let active = true;
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      if (!data.user) {
+        router.replace("/login");
+        return;
+      }
+      setAuthChecked(true);
+      void loadThreads();
+    });
+    return () => {
+      active = false;
+    };
+  }, [router, loadThreads]);
+
+  useEffect(() => {
+    if (!selectedAccountId && accounts.length > 0) {
+      setSelectedAccountId(accounts[0].id);
+    }
+  }, [accounts, selectedAccountId]);
 
   useEffect(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -111,12 +169,6 @@ export default function SavedPage() {
     }
   }, [searchQuery, threads]);
 
-  const loadThreads = () => {
-    const loaded = sortByNewest(getThreads());
-    setThreads(loaded);
-    setFilteredThreads(loaded);
-  };
-
   const toggleExpanded = (id: string) => {
     setExpandedThreadIds((prev) => {
       const next = new Set(prev);
@@ -138,15 +190,21 @@ export default function SavedPage() {
     router.push("/generator");
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!threadToDelete) return;
     const deletedId = threadToDelete.metadata.id;
-    const success = deleteThread(deletedId);
-    if (success) {
-      loadThreads();
+    try {
+      await deleteThread(deletedId);
+      await loadThreads();
       toast({
         title: t.toasts.deleted,
         description: t.toasts.deletedDesc,
+      });
+    } catch (error) {
+      toast({
+        title: t.toasts.saveFailed,
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
       });
     }
     setThreadToDelete(null);
@@ -215,14 +273,14 @@ export default function SavedPage() {
     const file = files[0];
     const reader = new FileReader();
 
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const content = String(event.target?.result || "");
         const parsedThreads = parseImportFile(content, file.name);
 
         if (parsedThreads.length > 0) {
-          const result = importThreads(parsedThreads);
-          loadThreads();
+          const result = await importThreads(parsedThreads);
+          await loadThreads();
           toast({
             title: t.toasts.imported,
             description: t.toasts.importedDesc(result.importedCount),
@@ -267,6 +325,39 @@ export default function SavedPage() {
       <Header />
       <main className="min-h-full bg-background text-foreground">
         <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+          {(!authChecked || isLoading) && !loadError ? (
+            <div
+              className="flex flex-col items-center justify-center gap-3 py-24 text-center"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
+              <p className="text-sm text-muted-foreground">{t.history.loadingLibrary}</p>
+            </div>
+          ) : loadError ? (
+            <div className="rounded-xl border bg-card p-8 sm:p-12 text-center text-card-foreground">
+              <div className="max-w-md mx-auto space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-destructive/10 text-destructive mx-auto flex items-center justify-center">
+                  <AlertCircle className="h-6 w-6" aria-hidden="true" />
+                </div>
+                <div role="alert">
+                  <h2 className="text-base sm:text-lg font-semibold text-foreground">
+                    {t.history.loadFailed}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
+                    {t.history.loadFailedDesc}
+                  </p>
+                </div>
+                <Button
+                  onClick={() => void loadThreads()}
+                  className="min-h-[44px] px-4 font-medium"
+                >
+                  {t.history.retry}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
           <div className="flex flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
@@ -278,6 +369,34 @@ export default function SavedPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              {accounts.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="saved-account-filter"
+                    className="text-xs text-muted-foreground hidden sm:inline"
+                  >
+                    {t.publish.accountFilterLabel}
+                  </label>
+                  <Select
+                    value={selectedAccountId}
+                    onValueChange={setSelectedAccountId}
+                  >
+                    <SelectTrigger
+                      id="saved-account-filter"
+                      className="min-h-[44px] w-[180px] text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          @{account.username}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -355,6 +474,8 @@ export default function SavedPage() {
           )}
 
           <div className="space-y-4">
+            <ScheduledList refreshKey={scheduleRefreshKey} />
+
             {filteredThreads.length > 0 ? (
               filteredThreads.map((thread) => {
                 const isExpanded = expandedThreadIds.has(thread.metadata.id);
@@ -389,6 +510,24 @@ export default function SavedPage() {
                       </div>
 
                       <div className="flex items-center gap-2 self-start shrink-0 flex-wrap">
+                        {accounts.length > 0 && (
+                          <PostToThreadsButton
+                            tweets={thread.tweets.map((tw) =>
+                              tw.content.replace(/\[AFFILIATE_LINK\]/g, "").trim()
+                            )}
+                            savedThreadId={thread.metadata.id}
+                            onSaved={() => void refreshAccounts(selectedAccountId)}
+                          />
+                        )}
+                        {accounts.length > 0 && (
+                          <SchedulePostDialog
+                            tweets={thread.tweets.map((tw) =>
+                              tw.content.replace(/\[AFFILIATE_LINK\]/g, "").trim()
+                            )}
+                            savedThreadId={thread.metadata.id}
+                            onScheduled={() => setScheduleRefreshKey((k) => k + 1)}
+                          />
+                        )}
                         <Button
                           onClick={() => handleLoadToStudio(thread)}
                           variant="outline"
@@ -457,7 +596,29 @@ export default function SavedPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {accounts.length > 0 && (
+                        <Badge
+                          variant="outline"
+                          className={
+                            publishedThreadIds.has(thread.metadata.id)
+                              ? "text-xs font-normal gap-1 border-success/40 text-success bg-success/5"
+                              : "text-xs font-normal gap-1 text-muted-foreground"
+                          }
+                        >
+                          {publishedThreadIds.has(thread.metadata.id) ? (
+                            <>
+                              <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+                              {t.publish.badgePosted}
+                            </>
+                          ) : (
+                            <>
+                              <Circle className="h-3 w-3" aria-hidden="true" />
+                              {t.publish.badgeNotPosted}
+                            </>
+                          )}
+                        </Badge>
+                      )}
                       <Badge variant="secondary" className="text-xs font-normal">
                         {thread.metadata.format === "single"
                           ? t.common.singleTweet
@@ -562,7 +723,7 @@ export default function SavedPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleExpanded(thread.metadata.id)}
-                            className="h-11 sm:h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground -ml-1"
+                            className="h-11 sm:h-8 text-xs text-muted-foreground hover:text-foreground"
                           >
                             {isExpanded ? (
                               <>
@@ -639,6 +800,8 @@ export default function SavedPage() {
               </div>
             )}
           </div>
+            </>
+          )}
         </div>
       </main>
 
