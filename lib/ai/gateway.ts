@@ -68,6 +68,29 @@ function coerceChatResponse(raw: unknown): ChatCompletionLike | null {
   return null;
 }
 
+interface ChatUsage {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+}
+
+/**
+ * Log token counts so plan credits can be calibrated against real provider
+ * cost. Only counts are logged, never prompt or completion text.
+ */
+function logTokenUsage(
+  providerId: string,
+  model: string,
+  completion: ChatCompletionLike,
+) {
+  const usage = (completion as { usage?: ChatUsage }).usage;
+  if (!usage) return;
+
+  console.info(
+    `[ai-usage] provider=${providerId} model=${model} prompt=${usage.prompt_tokens ?? 0} completion=${usage.completion_tokens ?? 0} total=${usage.total_tokens ?? 0}`,
+  );
+}
+
 function getClient(provider: AIProvider): OpenAI {
   const cached = clientCache.get(provider.id);
   if (cached) {
@@ -146,6 +169,8 @@ export async function generateCompletion(
       if (content.trim().length === 0) {
         throw new Error("Empty response from provider.");
       }
+
+      logTokenUsage(provider.id, provider.model, completion);
 
       // Truncation is the usual cause of invalid JSON downstream. Warn loudly
       // (but still return it — the parser can often repair truncated output).

@@ -17,8 +17,14 @@ import { AdjustLengthDialog } from "@/components/results/AdjustLengthDialog";
 import { PostToThreadsButton } from "@/components/results/PostToThreadsButton";
 import { DEFAULT_GENERATOR_CONFIG, GeneratorConfig } from "@/types/generator";
 import { GeneratedThread, SavedThread, Tweet, WritingStyle, Tone } from "@/types/thread";
-import { generateId, countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
-import { saveThread, downloadFile, exportSingleThreadToTXT } from "@/lib/storage/threads";
+import { generateId, countThreadsChars, hasEmojis, extractHashtags } from "@/lib/utils";
+import {
+  saveThread,
+  downloadFile,
+  exportSingleThreadToTXT,
+  LibraryLimitError,
+} from "@/lib/storage/threads";
+import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
 
@@ -49,6 +55,14 @@ export default function GeneratorPage() {
   const [savedThreadIdByVersion, setSavedThreadIdByVersion] = useState<
     Record<number, string>
   >({});
+
+  // AI endpoints require a signed-in user, so send anonymous visitors to login.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) router.replace("/login");
+    });
+  }, [router]);
 
   // Check if a saved thread was requested to be loaded from Saved Library
   useEffect(() => {
@@ -105,6 +119,7 @@ export default function GeneratorPage() {
 
           setGeneratedThreads([genThread]);
           setActiveVersion(1);
+          setSavedThreadIdByVersion({ 1: loadedThread.metadata.id });
 
           toast({
             title: t.toasts.loadedToStudio,
@@ -198,6 +213,8 @@ export default function GeneratorPage() {
 
       setGeneratedThreads(threads);
       setActiveVersion(1);
+      // New content has not been saved yet; clear ids from the previous run.
+      setSavedThreadIdByVersion({});
 
       toast({
         title: t.toasts.success,
@@ -229,6 +246,10 @@ export default function GeneratorPage() {
       });
 
       if (saved) {
+        setSavedThreadIdByVersion((prev) => ({
+          ...prev,
+          [activeVersion]: saved.metadata.id,
+        }));
         toast({
           title: t.toasts.saved,
           description: t.toasts.savedDesc,
@@ -241,6 +262,14 @@ export default function GeneratorPage() {
         });
       }
     } catch (error) {
+      if (error instanceof LibraryLimitError) {
+        toast({
+          title: t.toasts.libraryFull,
+          description: t.toasts.libraryFullDesc(error.max),
+          variant: "destructive",
+        });
+        return;
+      }
       toast({
         title: t.toasts.saveFailed,
         description: error instanceof Error ? error.message : t.toasts.saveFailedDesc,
@@ -258,7 +287,7 @@ export default function GeneratorPage() {
       updatedTweets[tweetIndex] = {
         ...updatedTweets[tweetIndex],
         content: newContent,
-        charCount: countTwitterChars(newContent),
+        charCount: countThreadsChars(newContent),
       };
 
       currentThread.tweets = updatedTweets;
@@ -292,6 +321,18 @@ export default function GeneratorPage() {
         body: JSON.stringify({
           tweetIndex,
           context,
+          config: {
+            style: currentThread.metadata.style,
+            tone: currentThread.metadata.tone,
+            language: currentThread.metadata.language,
+            targetAudience: currentThread.metadata.targetAudience,
+            contentGoal: currentThread.metadata.contentGoal,
+            useHook: currentThread.metadata.settings?.useHook,
+            useCTA: currentThread.metadata.settings?.useCTA,
+            includeEmojis: currentThread.metadata.settings?.includeEmojis,
+            includeHashtags: currentThread.metadata.settings?.includeHashtags,
+            affiliate: currentThread.metadata.affiliate,
+          },
         }),
       });
 
@@ -372,7 +413,7 @@ export default function GeneratorPage() {
         id: generateId(),
         content: t.content,
         order: t.order,
-        charCount: countTwitterChars(t.content),
+        charCount: countThreadsChars(t.content),
         hasEmoji: hasEmojis(t.content),
         hashtags: extractHashtags(t.content),
       }));
@@ -442,7 +483,7 @@ export default function GeneratorPage() {
         id: generateId(),
         content: data.tweet.content,
         order: targetTweet.order,
-        charCount: countTwitterChars(data.tweet.content),
+        charCount: countThreadsChars(data.tweet.content),
         hasEmoji: hasEmojis(data.tweet.content),
         hashtags: extractHashtags(data.tweet.content),
       };
@@ -673,10 +714,9 @@ export default function GeneratorPage() {
                         <PostToThreadsButton
                           tweets={currentThread.tweets.map((tw) => tw.content)}
                           savedThreadId={savedThreadIdByVersion[activeVersion]}
-                          onSaved={async () => {
-                            await ensureThreadSaved();
+                          onBeforePublish={ensureThreadSaved}
+                          onSaved={() => {
                             toast({ description: t.publish.savedBeforePublish });
-                            router.refresh();
                           }}
                         />
                       }

@@ -37,6 +37,23 @@ export function truncateText(text: string, maxLength: number): string {
   return text.slice(0, maxLength) + "...";
 }
 
+/** Human-readable byte size, e.g. 1536 -> "1.5 KB". */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let value = bytes;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  const rounded = unitIndex === 0 || value >= 10 ? Math.round(value) : Number(value.toFixed(1));
+  return `${rounded} ${units[unitIndex]}`;
+}
+
 /**
  * Return the URL only when it is a plain http/https address, else undefined.
  * Guards `href` sinks against `javascript:`/`data:` values from user input.
@@ -54,6 +71,7 @@ export function safeHttpUrl(url: string | undefined | null): string | undefined 
 }
 
 // Twitter counts every URL as 23 characters regardless of its real length.
+// Kept for import/export compatibility with older data.
 export function countTwitterChars(text: string): number {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const urls = text.match(urlRegex) || [];
@@ -64,6 +82,14 @@ export function countTwitterChars(text: string): number {
   });
 
   return count;
+}
+
+/**
+ * Threads counts the visible characters, including the full length of a URL.
+ * Counting code points (not UTF-16 units) keeps emoji at one character.
+ */
+export function countThreadsChars(text: string): number {
+  return Array.from(text).length;
 }
 
 export function hasEmojis(text: string): boolean {

@@ -4,8 +4,9 @@ import { SYSTEM_PROMPT, buildUserPrompt } from "@/lib/ai/prompts";
 import { GenerateResponse } from "@/types/generator";
 import { validateAIConfig } from "@/config/ai-provider";
 import { generateRequestSchema } from "@/lib/validations/generator";
-import { countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
+import { countThreadsChars, hasEmojis, extractHashtags } from "@/lib/utils";
 import { apiErrorResponse } from "@/lib/security/apiError";
+import { guardAIRequest, creditsExhaustedResponse } from "@/lib/security/aiGuard";
 
 interface RawTweet {
   content?: string;
@@ -105,6 +106,11 @@ function normalizeAIResponse(
 }
 
 export async function POST(request: NextRequest) {
+  const guard = await guardAIRequest(request, "/api/generate");
+  if (!guard.user) return guard.response;
+
+  let charged = false;
+
   try {
     const configValidation = validateAIConfig();
     if (!configValidation.valid) {
@@ -114,7 +120,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rawBody = await request.json();
+    const rawBody = await request.json().catch(() => null);
     const validationResult = generateRequestSchema.safeParse(rawBody);
     if (!validationResult.success) {
       const errorMsg = validationResult.error.issues
@@ -126,6 +132,11 @@ export async function POST(request: NextRequest) {
       );
     }
     const { config } = validationResult.data;
+
+    if (!(await guard.consume())) {
+      return creditsExhaustedResponse();
+    }
+    charged = true;
 
     const systemPrompt = SYSTEM_PROMPT;
     const userPrompt = buildUserPrompt(config);
@@ -146,7 +157,7 @@ export async function POST(request: NextRequest) {
         if (content.includes("[AFFILIATE_LINK]")) {
           content = content.replace(/\[AFFILIATE_LINK\]/g, "").replace(/\s{2,}/g, " ").trim();
         }
-        const charCount = countTwitterChars(content);
+        const charCount = countThreadsChars(content);
 
         return {
           content,
@@ -167,6 +178,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (charged) await guard.refund().catch(() => {});
     return apiErrorResponse(error, "generate", 500, { threads: [] });
   }
 }

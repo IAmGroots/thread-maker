@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { clearThreadsAccountsCache } from "@/hooks/use-threads-accounts";
 import { UserMenuClient } from "./UserMenuClient";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,8 @@ export function UserMenu() {
       setReady(true);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") clearThreadsAccountsCache();
       setUser(session?.user ?? null);
     });
 

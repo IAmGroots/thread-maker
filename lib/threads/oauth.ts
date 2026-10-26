@@ -1,5 +1,7 @@
 import "server-only";
 
+import { fetchWithTimeout } from "@/lib/http/fetchTimeout";
+
 /**
  * Threads OAuth (Meta) helpers.
  *
@@ -17,9 +19,13 @@ const THREADS_TOKEN_URL = "https://graph.threads.net/oauth/access_token";
 const THREADS_LONG_LIVED_TOKEN_URL = "https://graph.threads.net/access_token";
 const THREADS_GRAPH_URL = "https://graph.threads.net/v1.0";
 
+
 export const THREADS_SCOPES = [
-  "threads_basic",
-  "threads_content_publish",
+  "threads_basic", // Access the user's basic Threads profile and account information.
+  "threads_content_publish", // Publish text, image, video, and other supported content to Threads.
+  "threads_manage_replies", // Manage replies to create and publish multi-post threads.
+  "threads_read_replies", // Read replies and comments on the user's Threads posts.
+  "threads_manage_insights", // Access account and post insights for analytics.
 ] as const;
 
 export const THREADS_STATE_COOKIE = "threads_oauth_state";
@@ -68,7 +74,7 @@ export async function exchangeCodeForToken(
     code,
   });
 
-  const response = await fetch(THREADS_TOKEN_URL, {
+  const response = await fetchWithTimeout(THREADS_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
@@ -99,7 +105,7 @@ export async function exchangeForLongLivedToken(
     access_token: shortLivedToken,
   });
 
-  const response = await fetch(`${THREADS_LONG_LIVED_TOKEN_URL}?${params.toString()}`, {
+  const response = await fetchWithTimeout(`${THREADS_LONG_LIVED_TOKEN_URL}?${params.toString()}`, {
     method: "GET",
   });
 
@@ -124,7 +130,7 @@ export async function fetchThreadsProfile(
     access_token: accessToken,
   });
 
-  const response = await fetch(`${THREADS_GRAPH_URL}/me?${params.toString()}`);
+  const response = await fetchWithTimeout(`${THREADS_GRAPH_URL}/me?${params.toString()}`);
 
   if (!response.ok) {
     const detail = await response.text();

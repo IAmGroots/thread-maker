@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getCurrentWorkspace } from "@/lib/workspace/current";
 import { z } from "zod";
 import { apiErrorResponse } from "@/lib/security/apiError";
 
@@ -10,15 +12,15 @@ const disconnectSchema = z.object({
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const workspace = await getCurrentWorkspace();
+    if (!workspace) {
       return NextResponse.json(
         { success: false, error: "Not authenticated" },
         { status: 401 },
       );
     }
 
-    const raw = await request.json();
+    const raw = await request.json().catch(() => null);
     const parsed = disconnectSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
@@ -27,16 +29,57 @@ export async function POST(request: Request) {
       );
     }
 
-    // RLS scopes the delete to the current user; the explicit user_id filter is
-    // a belt-and-braces guard.
-    const { error } = await supabase
-      .from("threads_accounts")
-      .delete()
-      .eq("id", parsed.data.accountId)
-      .eq("user_id", user.id);
+    const admin = createAdminClient();
 
-    if (error) {
-      throw new Error(error.message);
+    const { data: account, error: readError } = await admin
+      .from("social_accounts")
+      .select("id, provider, provider_account_id")
+      .eq("id", parsed.data.accountId)
+      .eq("workspace_id", workspace.id)
+      .maybeSingle();
+
+    if (readError) throw new Error(readError.message);
+    if (!account) {
+      return NextResponse.json(
+        { success: false, error: "Account not found" },
+        { status: 404 },
+      );
+    }
+
+    // Keep publish history but drop the credentials: the privacy policy says a
+    // disconnected account no longer has a stored token.
+    const { error: revokeError } = await admin
+      .from("social_accounts")
+      .update({
+        status: "revoked",
+        access_token_enc: null,
+        refresh_token_enc: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", account.id)
+      .eq("workspace_id", workspace.id);
+
+    if (revokeError) throw new Error(revokeError.message);
+
+    // Targets that have not gone out yet cannot be published without a token.
+    const { error: cancelError } = await admin
+      .from("post_targets")
+      .update({ status: "canceled" })
+      .eq("workspace_id", workspace.id)
+      .eq("social_account_id", account.id)
+      .in("status", ["scheduled", "failed", "partial", "draft"]);
+
+    if (cancelError) throw new Error(cancelError.message);
+
+    // Remove the legacy copy so the connect flow can add it again cleanly.
+    if (account.provider === "threads") {
+      const { error: legacyError } = await admin
+        .from("threads_accounts")
+        .delete()
+        .eq("workspace_id", workspace.id)
+        .eq("threads_user_id", account.provider_account_id);
+
+      if (legacyError) throw new Error(legacyError.message);
     }
 
     return NextResponse.json({ success: true });

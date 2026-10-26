@@ -152,9 +152,9 @@ OPENAI_MODEL_NAME=llama-3.1-70b-versatile
 
 ### No threads showing in history
 
-- Threads are saved in browser localStorage
-- Clear cache might have removed them
-- Try saving a new thread to test
+- Threads are saved in Supabase and scoped to the signed-in user
+- Make sure you are signed in with the same account that saved them
+- Check that `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set
 
 ## Building for Production
 

@@ -1,5 +1,5 @@
 name = "threvo"
-main = ".open-next/worker.js"
+main = "./custom-worker.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
@@ -11,8 +11,9 @@ binding = "ASSETS"
 type = "ESModule"
 globs = ["**/*.js"]
 
-# Scheduled publishing: hit the cron endpoint every minute. The Worker fetches
-# its own route, which is guarded by the CRON_SECRET worker secret.
-# (Alternatively use an external scheduler such as cron-job.org.)
+# Scheduled work. Each tick hits its own authenticated route; see
+# custom-worker.ts for the cron -> route mapping.
+#   every minute     -> publish queue, token refresh, billing expiry
+#   every 5 minutes  -> analytics sync
 [triggers]
-crons = ["* * * * *"]
+crons = ["* * * * *", "*/5 * * * *"]

@@ -3,10 +3,16 @@ import { generateCompletion, parseJSONResponse } from "@/lib/ai/client";
 import { SYSTEM_PROMPT_MICRO, buildTransformPrompt } from "@/lib/ai/prompts";
 import { validateAIConfig } from "@/config/ai-provider";
 import { transformRequestSchema } from "@/lib/validations/generator";
-import { countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
+import { countThreadsChars, hasEmojis, extractHashtags } from "@/lib/utils";
 import { apiErrorResponse } from "@/lib/security/apiError";
+import { guardAIRequest, creditsExhaustedResponse } from "@/lib/security/aiGuard";
 
 export async function POST(request: NextRequest) {
+  const guard = await guardAIRequest(request, "/api/transform");
+  if (!guard.user) return guard.response;
+
+  let charged = false;
+
   try {
     const configValidation = validateAIConfig();
     if (!configValidation.valid) {
@@ -16,7 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rawBody = await request.json();
+    const rawBody = await request.json().catch(() => null);
     const validationResult = transformRequestSchema.safeParse(rawBody);
     if (!validationResult.success) {
       const errorMsg = validationResult.error.issues
@@ -29,6 +35,11 @@ export async function POST(request: NextRequest) {
     }
 
     const { tweets, newStyle, newTone } = validationResult.data;
+
+    if (!(await guard.consume())) {
+      return creditsExhaustedResponse();
+    }
+    charged = true;
 
     const userPrompt = buildTransformPrompt(tweets, newStyle, newTone);
 
@@ -56,7 +67,7 @@ export async function POST(request: NextRequest) {
       return {
         content,
         order,
-        charCount: countTwitterChars(content),
+        charCount: countThreadsChars(content),
         hasEmoji: hasEmojis(content),
         hashtags: extractHashtags(content),
       };
@@ -67,6 +78,7 @@ export async function POST(request: NextRequest) {
       tweets: processedTweets,
     });
   } catch (error) {
+    if (charged) await guard.refund().catch(() => {});
     return apiErrorResponse(error, "transform", 500, { tweets: [] });
   }
 }

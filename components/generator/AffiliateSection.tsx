@@ -311,7 +311,16 @@ export function AffiliateSection({
               id="key-points-textarea"
               rows={3}
               placeholder={t.affiliate.keyPointsPlaceholder}
-
+              value={(product.keyPoints ?? []).join("\n")}
+              onChange={(event) =>
+                updateProduct({
+                  keyPoints: event.target.value
+                    .split("\n")
+                    .map((point) => point.trim())
+                    .filter(Boolean)
+                    .slice(0, 8),
+                })
+              }
               className="text-xs sm:text-sm resize-none min-h-[120px]"
             />
             <p className="text-xs text-muted-foreground">

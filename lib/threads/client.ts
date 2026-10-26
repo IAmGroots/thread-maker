@@ -1,5 +1,6 @@
 import "server-only";
 import { exchangeForLongLivedToken, computeTokenExpiry } from "./oauth";
+import { fetchWithTimeout } from "@/lib/http/fetchTimeout";
 
 const THREADS_GRAPH_URL = "https://graph.threads.net/v1.0";
 const THREADS_REFRESH_URL = "https://graph.threads.net/refresh_access_token";
@@ -21,7 +22,7 @@ export async function refreshLongLivedToken(
     access_token: currentToken,
   });
 
-  const response = await fetch(`${THREADS_REFRESH_URL}?${params.toString()}`);
+  const response = await fetchWithTimeout(`${THREADS_REFRESH_URL}?${params.toString()}`);
 
   if (!response.ok) {
     const detail = await response.text();

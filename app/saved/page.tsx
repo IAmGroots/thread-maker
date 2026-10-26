@@ -17,10 +17,7 @@ import { Header } from "@/components/header";
 import { SavedThread } from "@/types/thread";
 import { createClient } from "@/lib/supabase/client";
 import {
-  listThreads,
   deleteThread,
-  exportToJSON,
-  exportToTXT,
   exportSingleThreadToTXT,
   exportSingleThreadToJSON,
   downloadFile,
@@ -33,7 +30,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useThreadsAccounts } from "@/hooks/use-threads-accounts";
 import { PostToThreadsButton } from "@/components/results/PostToThreadsButton";
 import { SchedulePostDialog } from "@/components/saved/SchedulePostDialog";
-import { ScheduledList } from "@/components/saved/ScheduledList";
 import { CheckCircle2, Circle } from "lucide-react";
 import {
   Search,
@@ -66,15 +62,6 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 
-// Sorts by creation date, newest first.
-function sortByNewest(list: SavedThread[]) {
-  return [...list].sort(
-    (a, b) =>
-      new Date(b.metadata.createdAt).getTime() -
-      new Date(a.metadata.createdAt).getTime()
-  );
-}
-
 export default function SavedPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -86,6 +73,12 @@ export default function SavedPage() {
   const [threadToDelete, setThreadToDelete] = useState<SavedThread | null>(null);
   const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set());
 
+  // Server-side paging: the browser only ever holds the pages it asked for.
+  const PAGE_SIZE = 20;
+  const [totalThreads, setTotalThreads] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   // Auth + data loading states (R-27: loading, error, empty are all designed).
   const [authChecked, setAuthChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,28 +86,50 @@ export default function SavedPage() {
 
   // Selected Threads account drives the per-account "posted" badge.
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
-  const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0);
   const {
     accounts,
     publishedThreadIds,
     refresh: refreshAccounts,
   } = useThreadsAccounts(selectedAccountId || undefined);
+  const activeAccounts = accounts.filter(
+    (account) => (account.status ?? "active") === "active",
+  );
 
   // Focus restoration ref for delete triggers
   const triggerButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const loadThreads = useCallback(async () => {
-    setIsLoading(true);
-    setLoadError(null);
+  const loadThreads = useCallback(async (query = "", offset = 0) => {
+    if (offset === 0) {
+      setIsLoading(true);
+      setLoadError(null);
+    } else {
+      setIsLoadingMore(true);
+    }
+
     try {
-      const loaded = sortByNewest(await listThreads());
-      setThreads(loaded);
-      setFilteredThreads(loaded);
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(offset),
+      });
+      if (query.trim()) params.set("query", query.trim());
+
+      const response = await fetch(`/api/library?${params.toString()}`);
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "unknown");
+      }
+
+      const page = (data.threads ?? []) as SavedThread[];
+      setThreads((prev) => (offset === 0 ? page : [...prev, ...page]));
+      setFilteredThreads((prev) => (offset === 0 ? page : [...prev, ...page]));
+      setTotalThreads(Number(data.total ?? page.length));
+      setHasMore(Boolean(data.hasMore));
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "unknown");
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   }, []);
 
@@ -129,45 +144,28 @@ export default function SavedPage() {
         return;
       }
       setAuthChecked(true);
-      void loadThreads();
     });
     return () => {
       active = false;
     };
-  }, [router, loadThreads]);
+  }, [router]);
 
   useEffect(() => {
-    if (!selectedAccountId && accounts.length > 0) {
-      setSelectedAccountId(accounts[0].id);
+    if (!selectedAccountId && activeAccounts.length > 0) {
+      setSelectedAccountId(activeAccounts[0].id);
     }
-  }, [accounts, selectedAccountId]);
+  }, [activeAccounts, selectedAccountId]);
 
   useEffect(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (q) {
-      const filtered = threads.filter((thread) => {
-        const matchesTopic = thread.metadata.topic?.toLowerCase().includes(q);
-        const matchesStyle = thread.metadata.style?.toLowerCase().includes(q);
-        const matchesTone = thread.metadata.tone?.toLowerCase().includes(q);
-        const matchesAffiliate =
-          thread.metadata.affiliate?.product?.productName
-            ?.toLowerCase()
-            .includes(q) ||
-          thread.metadata.affiliate?.product?.affiliateUrl
-            ?.toLowerCase()
-            .includes(q);
-        const matchesContent = thread.tweets?.some((tw) =>
-          tw.content?.toLowerCase().includes(q)
-        );
-        return Boolean(
-          matchesTopic || matchesStyle || matchesTone || matchesAffiliate || matchesContent
-        );
-      });
-      setFilteredThreads(filtered);
-    } else {
-      setFilteredThreads(threads);
-    }
-  }, [searchQuery, threads]);
+    if (!authChecked) return;
+
+    const q = searchQuery.trim();
+    const timer = window.setTimeout(() => {
+      void loadThreads(q, 0);
+    }, q ? 300 : 0);
+
+    return () => window.clearTimeout(timer);
+  }, [authChecked, searchQuery, loadThreads]);
 
   const toggleExpanded = (id: string) => {
     setExpandedThreadIds((prev) => {
@@ -195,7 +193,7 @@ export default function SavedPage() {
     const deletedId = threadToDelete.metadata.id;
     try {
       await deleteThread(deletedId);
-      await loadThreads();
+      await loadThreads(searchQuery, 0);
       toast({
         title: t.toasts.deleted,
         description: t.toasts.deletedDesc,
@@ -248,23 +246,43 @@ export default function SavedPage() {
     });
   };
 
-  const handleExportJSON = () => {
-    const json = exportToJSON(filteredThreads);
-    downloadFile(json, `threads-${Date.now()}.json`, "application/json");
-    toast({
-      title: t.toasts.exported,
-      description: t.toasts.exportedJsonDesc,
-    });
+  const handleExportAll = async (format: "json" | "txt") => {
+    try {
+      const params = new URLSearchParams({ format });
+      if (searchQuery.trim()) params.set("query", searchQuery.trim());
+
+      const response = await fetch(`/api/library/export?${params.toString()}`);
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || t.history.loadFailed);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `threads-${Date.now()}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: t.toasts.exported,
+        description:
+          format === "json" ? t.toasts.exportedJsonDesc : t.toasts.exportedTxtDesc,
+      });
+    } catch (error) {
+      toast({
+        title: t.toasts.exported,
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleExportTXT = () => {
-    const txt = exportToTXT(filteredThreads);
-    downloadFile(txt, `threads-${Date.now()}.txt`, "text/plain");
-    toast({
-      title: t.toasts.exported,
-      description: t.toasts.exportedTxtDesc,
-    });
-  };
+  const handleExportJSON = () => void handleExportAll("json");
+  const handleExportTXT = () => void handleExportAll("txt");
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -280,7 +298,7 @@ export default function SavedPage() {
 
         if (parsedThreads.length > 0) {
           const result = await importThreads(parsedThreads);
-          await loadThreads();
+          await loadThreads(searchQuery, 0);
           toast({
             title: t.toasts.imported,
             description: t.toasts.importedDesc(result.importedCount),
@@ -349,7 +367,7 @@ export default function SavedPage() {
                   </p>
                 </div>
                 <Button
-                  onClick={() => void loadThreads()}
+                  onClick={() => void loadThreads(searchQuery, 0)}
                   className="min-h-[44px] px-4 font-medium"
                 >
                   {t.history.retry}
@@ -364,12 +382,12 @@ export default function SavedPage() {
                 {t.history.title}
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                {t.history.countSaved(threads.length)}
+                {t.history.countSaved(totalThreads)}
               </p>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {accounts.length > 0 && (
+              {activeAccounts.length > 0 && (
                 <div className="flex items-center gap-2">
                   <label
                     htmlFor="saved-account-filter"
@@ -388,7 +406,7 @@ export default function SavedPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {accounts.map((account) => (
+                      {activeAccounts.map((account) => (
                         <SelectItem key={account.id} value={account.id}>
                           @{account.username}
                         </SelectItem>
@@ -474,7 +492,16 @@ export default function SavedPage() {
           )}
 
           <div className="space-y-4">
-            <ScheduledList refreshKey={scheduleRefreshKey} />
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card px-4 py-3">
+              <p className="text-sm font-medium text-foreground">{t.queue.title}</p>
+              <Link
+                href="/queue"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-primary underline-offset-4 hover:underline min-h-[44px]"
+              >
+                {t.publish.openQueue}
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+            </div>
 
             {filteredThreads.length > 0 ? (
               filteredThreads.map((thread) => {
@@ -510,22 +537,23 @@ export default function SavedPage() {
                       </div>
 
                       <div className="flex items-center gap-2 self-start shrink-0 flex-wrap">
-                        {accounts.length > 0 && (
+                        {activeAccounts.length > 0 && (
                           <PostToThreadsButton
                             tweets={thread.tweets.map((tw) =>
                               tw.content.replace(/\[AFFILIATE_LINK\]/g, "").trim()
                             )}
                             savedThreadId={thread.metadata.id}
+                            accountId={selectedAccountId || undefined}
                             onSaved={() => void refreshAccounts(selectedAccountId)}
                           />
                         )}
-                        {accounts.length > 0 && (
+                        {activeAccounts.length > 0 && (
                           <SchedulePostDialog
                             tweets={thread.tweets.map((tw) =>
                               tw.content.replace(/\[AFFILIATE_LINK\]/g, "").trim()
                             )}
                             savedThreadId={thread.metadata.id}
-                            onScheduled={() => setScheduleRefreshKey((k) => k + 1)}
+                            onScheduled={() => router.refresh()}
                           />
                         )}
                         <Button
@@ -597,7 +625,7 @@ export default function SavedPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {accounts.length > 0 && (
+                      {activeAccounts.length > 0 && (
                         <Badge
                           variant="outline"
                           className={
@@ -745,7 +773,7 @@ export default function SavedPage() {
               })
             ) : (
               <div className="rounded-xl border bg-card p-8 sm:p-12 text-center text-card-foreground">
-                {threads.length === 0 ? (
+                {totalThreads === 0 ? (
                   <div className="max-w-md mx-auto space-y-4">
                     <div className="w-12 h-12 rounded-xl bg-secondary text-foreground mx-auto flex items-center justify-center">
                       <Library className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
@@ -799,12 +827,31 @@ export default function SavedPage() {
                 )}
               </div>
             )}
+
+            {hasMore && (
+              <div className="flex justify-center pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => void loadThreads(searchQuery, threads.length)}
+                  disabled={isLoadingMore}
+                  className="min-h-[44px] px-4 text-sm font-medium"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />
+                      {t.common.loading}
+                    </>
+                  ) : (
+                    t.history.loadMore(totalThreads - threads.length)
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
             </>
           )}
         </div>
       </main>
-
       <AlertDialog
         open={!!threadToDelete}
         onOpenChange={(open) => {

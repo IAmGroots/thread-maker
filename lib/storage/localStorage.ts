@@ -9,7 +9,7 @@ import {
 import { STORAGE_KEYS, LocalStorageData, StorageConfig } from "@/types/storage";
 import {
   generateId,
-  countTwitterChars,
+  countThreadsChars,
   hasEmojis,
   extractHashtags,
 } from "@/lib/utils";
@@ -276,7 +276,7 @@ function normalizeTweets(rawTweets: unknown[]): Tweet[] {
         id: generateId(),
         content,
         order,
-        charCount: countTwitterChars(content),
+        charCount: countThreadsChars(content),
         hasEmoji: hasEmojis(content),
         hashtags: extractHashtags(content),
       };

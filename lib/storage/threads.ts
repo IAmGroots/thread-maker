@@ -18,6 +18,14 @@ type SavedThreadUpdate = Database["public"]["Tables"]["saved_threads"]["Update"]
 
 const DEFAULT_MAX_THREADS = 100;
 
+/** Raised when saving would exceed the per-user library cap. */
+export class LibraryLimitError extends Error {
+  constructor(readonly max: number) {
+    super(`library_full:${max}`);
+    this.name = "LibraryLimitError";
+  }
+}
+
 export {
   slugifyTopic,
   exportSingleThreadToTXT,
@@ -38,7 +46,7 @@ function getMaxThreads(): number {
 
 // ---- Row mapping -----------------------------------------------------------
 
-interface SavedThreadRow {
+export interface SavedThreadRow {
   id: string;
   user_id: string;
   topic: string;
@@ -60,7 +68,7 @@ interface SavedThreadRow {
   updated_at: string;
 }
 
-function rowToThread(row: SavedThreadRow): SavedThread {
+export function rowToThread(row: SavedThreadRow): SavedThread {
   const tweets = (Array.isArray(row.tweets) ? row.tweets : []) as unknown as Tweet[];
   const settings = (row.settings ?? {}) as unknown as SavedThread["metadata"]["settings"];
   const tags = Array.isArray(row.tags) ? (row.tags as unknown as string[]) : [];
@@ -136,7 +144,8 @@ export async function saveThread(thread: SavedThread): Promise<SavedThread | nul
 
   const supabase = createClient();
 
-  // Enforce the per-user cap by trimming the oldest rows beyond the limit.
+  // Enforce the per-user cap without deleting anything: silently dropping the
+  // oldest thread would lose user data.
   const maxThreads = getMaxThreads();
   const { count } = await supabase
     .from("saved_threads")
@@ -144,19 +153,7 @@ export async function saveThread(thread: SavedThread): Promise<SavedThread | nul
     .eq("user_id", userId);
 
   if ((count ?? 0) >= maxThreads) {
-    const overflow = (count ?? 0) - maxThreads + 1;
-    const { data: oldest } = await supabase
-      .from("saved_threads")
-      .select("id")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true })
-      .limit(overflow);
-    if (oldest && oldest.length > 0) {
-      await supabase
-        .from("saved_threads")
-        .delete()
-        .in("id", oldest.map((row) => row.id));
-    }
+    throw new LibraryLimitError(maxThreads);
   }
 
   const { data, error } = await supabase
@@ -196,14 +193,17 @@ export async function updateThread(
   if (updates.totalChars !== undefined) patch.total_chars = updates.totalChars;
   if (updates.isFavorite !== undefined) patch.is_favorite = updates.isFavorite;
   if (updates.tags !== undefined) patch.tags = updates.tags as unknown as Json;
-  if (updates.notes !== undefined) patch.notes = updates.notes;  const { error } = await supabase
+  if (updates.notes !== undefined) patch.notes = updates.notes;
+
+  const { data, error } = await supabase
     .from("saved_threads")
     .update(patch)
     .eq("id", threadId)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .select("id");
 
   if (error) throw new Error(error.message);
-  return true;
+  return Boolean(data && data.length > 0);
 }
 
 export async function deleteThread(threadId: string): Promise<boolean> {
@@ -211,14 +211,15 @@ export async function deleteThread(threadId: string): Promise<boolean> {
   if (!userId) throw new Error("Not authenticated");
 
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("saved_threads")
     .delete()
     .eq("id", threadId)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .select("id");
 
   if (error) throw new Error(error.message);
-  return true;
+  return Boolean(data && data.length > 0);
 }
 
 export async function importThreads(
@@ -229,6 +230,16 @@ export async function importThreads(
 
   const supabase = createClient();
   const rows = newThreads.map((thread) => threadToRow(thread, userId));
+
+  const maxThreads = getMaxThreads();
+  const { count } = await supabase
+    .from("saved_threads")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if ((count ?? 0) + rows.length > maxThreads) {
+    throw new LibraryLimitError(maxThreads);
+  }
 
   const { data, error } = await supabase
     .from("saved_threads")

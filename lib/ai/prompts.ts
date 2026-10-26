@@ -16,7 +16,7 @@ export function sanitizeUserInput(input: string): string {
  * System prompt for full thread generation.
  * Densified, authentic, anti-slop, token-optimized, and prompt-injection defended.
  */
-export const SYSTEM_PROMPT_GENERATOR = `You are an expert Twitter/X writer who creates authentic, high-impact posts and threads that feel genuinely human.
+export const SYSTEM_PROMPT_GENERATOR = `You are an expert Threads writer who creates authentic, high-impact posts and threads that feel genuinely human.
 
 CORE PRINCIPLES:
 1. AUTHENTIC HUMAN VOICE: Write like a real creator sharing thoughts with people. Use natural conversational rhythm, everyday vocabulary, and active phrasing. Avoid corporate, academic, or marketing jargon.
@@ -45,7 +45,7 @@ export const SYSTEM_PROMPT = SYSTEM_PROMPT_GENERATOR;
  * Lightweight system prompt for single-tweet edits, length adjustments, and transformations.
  * Super fast, ultra-low token consumption (~100 tokens), with injection defenses.
  */
-export const SYSTEM_PROMPT_MICRO = `You are a fast, precise Twitter/X content editor.
+export const SYSTEM_PROMPT_MICRO = `You are a fast, precise Threads content editor.
 Your objective is to edit, transform, or adjust specific tweets while preserving an authentic human voice.
 
 RULES:
@@ -106,8 +106,8 @@ export function buildUserPrompt(config: GeneratorConfig): string {
 
   let prompt = `Create ${
     format === "thread"
-      ? `a Twitter/X thread with ${numberOfTweets} tweets`
-      : "a single Twitter/X post"
+      ? `a Threads thread with ${numberOfTweets} tweets`
+      : "a single Threads post"
   } about the following topic.
 
 TOPIC:
@@ -233,6 +233,15 @@ HASHTAGS:
           "Organic narrative leading smoothly to the product recommendation.";
     }
 
+    const ctaInstruction =
+      ctaPlacement === "reply"
+        ? `3. FINAL TWEET: wrap up with an authentic, friendly conclusion mentioning the product naturally${
+            sanitizedTag ? ` and include disclosure tag(s) ${sanitizedTag}` : ""
+          }. Then add ONE extra short reply as the last segment with the call-to-action. That reply counts toward the requested number of tweets.`
+        : `3. FINAL TWEET: wrap up with an authentic, friendly conclusion mentioning the product naturally and include the call-to-action in this same tweet${
+            sanitizedTag ? ` and disclosure tag(s) ${sanitizedTag}` : ""
+          }.`;
+
     prompt += `
 
 AFFILIATE STORYTELLING:
@@ -244,13 +253,10 @@ ${sanitizedPrice ? `- Price: ${sanitizedPrice}\n` : ""}${
 NARRATIVE ARC & PRODUCT PLACEMENT:
 1. HOOK & FIRST HALF: Focus entirely on the core problem, story, or insight. Never name or pitch the product in the first tweet or first 50% of the thread.
 2. LATTER HALF: Introduce the product organically as part of the personal experience or discovery.
-3. FINAL TWEET:
-   - Wrap up with an authentic, friendly conclusion mentioning the product naturally${
-     sanitizedTag ? ` and include disclosure tag(s) ${sanitizedTag}` : ""
-   }.
+${ctaInstruction}
    - Do NOT paste any URLs or links inside the tweet text. The product link and details will be displayed separately at the bottom of the thread.
 4. ANTI-SLOP SELLING RESTRICTIONS:
-   - Do NOT use pushy marketing clichés (e.g. "wajib punya", "buruan checkout", "game changer", "racun belanja", "solusi ajaib", "klik link di bio").
+   - Do NOT use pushy marketing cliches (e.g. "wajib punya", "buruan checkout", "game changer", "racun belanja", "solusi ajaib", "klik link di bio").
    - Do NOT fabricate fake discounts, flash-sale timers, or false health claims.
    - Do NOT write raw URLs or web addresses into the tweet text.`;
   }
@@ -295,7 +301,7 @@ export function buildRegenerateTweetPrompt(
     .map((t) => sanitizeUserInput(t))
     .join("\n---\n");
 
-  let prompt = `Regenerate tweet ${tweetIndex + 1} of ${totalTweets} in this Twitter/X thread.
+  let prompt = `Regenerate tweet ${tweetIndex + 1} of ${totalTweets} in this Threads thread.
 Replace the tweet with a sharper, more natural version that flows seamlessly from the previous tweet and leads smoothly into the next.
 
 CONTEXT - PREVIOUS TWEETS:
@@ -358,7 +364,7 @@ export function buildTransformPrompt(
     .map((t, i) => `${i + 1}. ${sanitizeUserInput(t)}`)
     .join("\n\n");
 
-  return `Transform this Twitter/X thread into a new writing style and tone while preserving the core message, narrative flow, and number of tweets.
+  return `Transform this Threads thread into a new writing style and tone while preserving the core message, narrative flow, and number of tweets.
 
 CURRENT THREAD:
 <untrusted_thread>
@@ -385,7 +391,7 @@ export function buildAdjustLengthPrompt(
   direction: "shorten" | "lengthen",
 ): string {
   if (direction === "shorten") {
-    return `Rewrite this Twitter/X tweet to make it shorter and punchier while keeping the main point clear.
+    return `Rewrite this Threads tweet to make it shorter and punchier while keeping the main point clear.
 
 ORIGINAL TWEET:
 <untrusted_tweet>
@@ -402,7 +408,7 @@ Return ONLY valid JSON:
 {"content": "shortened tweet text"}`;
   }
 
-  return `Rewrite this Twitter/X tweet to expand it with more useful context, detail, or an observation while preserving the core message.
+  return `Rewrite this Threads tweet to expand it with more useful context, detail, or an observation while preserving the core message.
 
 ORIGINAL TWEET:
 <untrusted_tweet>

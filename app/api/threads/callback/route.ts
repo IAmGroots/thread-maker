@@ -9,6 +9,8 @@ import {
 } from "@/lib/threads/oauth";
 import { encryptToken } from "@/lib/threads/crypto";
 import { getRequestOrigin } from "@/lib/http/origin";
+import { getCurrentWorkspace } from "@/lib/workspace/current";
+import { getPlanLimits } from "@/lib/billing/credits";
 import { apiErrorResponse } from "@/lib/security/apiError";
 
 export async function GET(request: NextRequest) {
@@ -41,6 +43,38 @@ export async function GET(request: NextRequest) {
     const shortLived = await exchangeCodeForToken(code);
     const longLived = await exchangeForLongLivedToken(shortLived.access_token);
     const profile = await fetchThreadsProfile(longLived.access_token);
+
+    const workspace = await getCurrentWorkspace();
+    if (!workspace) {
+      return NextResponse.redirect(`${origin}/login`);
+    }
+
+    // Enforce the channel limit, but let an existing account reconnect even
+    // when the workspace is already at its limit.
+    const { data: existing, error: existingError } = await supabase
+      .from("social_accounts")
+      .select("id")
+      .eq("workspace_id", workspace.id)
+      .eq("provider", "threads")
+      .eq("provider_account_id", profile.id)
+      .maybeSingle();
+
+    if (existingError) throw new Error(existingError.message);
+
+    if (!existing) {
+      const { count, error: countError } = await supabase
+        .from("social_accounts")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspace.id)
+        .eq("status", "active");
+
+      if (countError) throw new Error(countError.message);
+
+      const limit = getPlanLimits(workspace.plan).channels;
+      if ((count ?? 0) >= limit) {
+        return failRedirect("channel_limit");
+      }
+    }
 
     const encryptedToken = await encryptToken(longLived.access_token);
     const expiresAt = computeTokenExpiry(longLived.expires_in);

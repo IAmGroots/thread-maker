@@ -19,13 +19,12 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { CalendarClock, Loader2, AlertCircle } from "lucide-react";
+import { MediaPicker } from "@/components/media/media-picker";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
 import { useThreadsAccounts } from "@/hooks/use-threads-accounts";
-import { countTwitterChars } from "@/lib/utils";
-
-const MAX_POST_CHARS = 500;
-const MAX_CHAIN_LENGTH = 15;
+import { countThreadsChars } from "@/lib/utils";
+import { MAX_CHAIN_LENGTH, MAX_POST_CHARS } from "@/lib/threads/limits";
 
 interface SchedulePostDialogProps {
   tweets: string[];
@@ -49,17 +48,22 @@ export function SchedulePostDialog({
   const { t, locale } = useI18n();
   const { toast } = useToast();
   const { accounts } = useThreadsAccounts();
+  const activeAccounts = useMemo(
+    () => accounts.filter((account) => (account.status ?? "active") === "active"),
+    [accounts],
+  );
 
   const [open, setOpen] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [when, setWhen] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedMediaId, setSelectedMediaId] = useState("");
 
   useEffect(() => {
-    if (!selectedAccountId && accounts.length > 0) {
-      setSelectedAccountId(accounts[0].id);
+    if (!selectedAccountId && activeAccounts.length > 0) {
+      setSelectedAccountId(activeAccounts[0].id);
     }
-  }, [accounts, selectedAccountId]);
+  }, [activeAccounts, selectedAccountId]);
 
   useEffect(() => {
     if (open && !when) {
@@ -69,7 +73,7 @@ export function SchedulePostDialog({
   }, [open, when]);
 
   const tooLongIndex = useMemo(
-    () => tweets.findIndex((tw) => countTwitterChars(tw) > MAX_POST_CHARS),
+    () => tweets.findIndex((tw) => countThreadsChars(tw) > MAX_POST_CHARS),
     [tweets],
   );
   const tooMany = tweets.length > MAX_CHAIN_LENGTH;
@@ -92,6 +96,7 @@ export function SchedulePostDialog({
           savedThreadId,
           tweets,
           scheduledFor: new Date(when).toISOString(),
+          mediaId: selectedMediaId || undefined,
         }),
       });
       const data = await response.json();
@@ -128,7 +133,7 @@ export function SchedulePostDialog({
         onClick={() => setOpen(true)}
         variant="outline"
         size="sm"
-        disabled={accounts.length === 0}
+        disabled={activeAccounts.length === 0}
         className="min-h-[44px] px-3 text-xs font-medium"
       >
         <CalendarClock className="h-4 w-4 mr-1" aria-hidden="true" />
@@ -158,7 +163,7 @@ export function SchedulePostDialog({
                   <SelectValue placeholder={t.publish.noAccount} />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.map((account) => (
+                  {activeAccounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
                       @{account.username}
                     </SelectItem>
@@ -184,6 +189,14 @@ export function SchedulePostDialog({
                 {t.schedule.timeHint}
               </p>
             </div>
+
+            <MediaPicker
+              idPrefix="schedule-media"
+              value={selectedMediaId}
+              onChange={setSelectedMediaId}
+              enabled={open}
+              disabled={isSubmitting}
+            />
 
             {when !== "" && whenInvalid && (
               <div

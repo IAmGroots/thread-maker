@@ -6,7 +6,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
-import { LogOut, Settings } from "lucide-react";
+import { clearThreadsAccountsCache } from "@/hooks/use-threads-accounts";
+import { CreditCard, LogOut, Settings } from "lucide-react";
 
 interface Profile {
   fullName?: string;
@@ -61,6 +62,7 @@ export function UserMenuClient({ profile }: { profile: Profile }) {
     setOpen(false);
     const supabase = createClient();
     await supabase.auth.signOut();
+    clearThreadsAccountsCache();
     router.push("/login");
     router.refresh();
   }
@@ -109,6 +111,15 @@ export function UserMenuClient({ profile }: { profile: Profile }) {
           </div>
 
           <div className="py-2">
+            <Link
+              href="/billing"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-sm text-foreground hover:bg-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            >
+              <CreditCard className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              {t.billing.title}
+            </Link>
             <Link
               href="/settings"
               role="menuitem"

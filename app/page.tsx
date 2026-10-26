@@ -14,7 +14,7 @@ export default function HomePage() {
     <>
       <Header />
       <main className="bg-background text-foreground">
-        <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-16">
+        <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
             <div className="lg:col-span-5 space-y-6">
               <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-muted-foreground">
@@ -106,6 +106,34 @@ export default function HomePage() {
           </div>
         </div>
       </main>
+
+      <footer className="border-t">
+        <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {`© ${new Date().getFullYear()} Threvo`}
+          </p>
+          <nav aria-label="Legal" className="flex items-center gap-4">
+            <Link
+              href="/privacy"
+              className="inline-flex items-center min-h-[44px] text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            >
+              {t.legal.privacy}
+            </Link>
+            <Link
+              href="/terms"
+              className="inline-flex items-center min-h-[44px] text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            >
+              {t.legal.terms}
+            </Link>
+            <Link
+              href="/data-deletion"
+              className="inline-flex items-center min-h-[44px] text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            >
+              {t.legal.deletion}
+            </Link>
+          </nav>
+        </div>
+      </footer>
     </>
   );
 }
