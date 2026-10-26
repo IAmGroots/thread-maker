@@ -1,5 +1,7 @@
 # 🎉 Project Complete - Thread Maker
 
+> Arsip. Dokumen ini mencatat kondisi proyek saat pertama selesai dan sudah tidak akurat: penyimpanan thread kini di Supabase, bukan `localStorage`, dan aplikasi sudah punya autentikasi, koneksi Threads, publish, serta penjadwalan. Untuk kondisi terkini, baca `README.md` dan `docs/adr/`.
+
 ## ✅ Implementation Summary
 
 Aplikasi **Thread Maker** telah berhasil dibangun dengan fitur lengkap! Berikut adalah ringkasan dari apa yang telah dikembangkan:

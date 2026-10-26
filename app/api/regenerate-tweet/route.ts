@@ -3,10 +3,16 @@ import { generateCompletion, parseJSONResponse } from "@/lib/ai/client";
 import { SYSTEM_PROMPT_MICRO, buildRegenerateTweetPrompt } from "@/lib/ai/prompts";
 import { validateAIConfig } from "@/config/ai-provider";
 import { regenerateTweetRequestSchema } from "@/lib/validations/generator";
-import { countTwitterChars, hasEmojis, extractHashtags } from "@/lib/utils";
+import { countThreadsChars, hasEmojis, extractHashtags } from "@/lib/utils";
 import { apiErrorResponse } from "@/lib/security/apiError";
+import { guardAIRequest, creditsExhaustedResponse } from "@/lib/security/aiGuard";
 
 export async function POST(request: NextRequest) {
+  const guard = await guardAIRequest(request, "/api/regenerate-tweet");
+  if (!guard.user) return guard.response;
+
+  let charged = false;
+
   try {
     const configValidation = validateAIConfig();
     if (!configValidation.valid) {
@@ -16,7 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rawBody = await request.json();
+    const rawBody = await request.json().catch(() => null);
     const validationResult = regenerateTweetRequestSchema.safeParse(rawBody);
     if (!validationResult.success) {
       const errorMsg = validationResult.error.issues
@@ -28,13 +34,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { tweetIndex, context } = validationResult.data;
+    const { tweetIndex, context, config } = validationResult.data;
+
+    if (!(await guard.consume())) {
+      return creditsExhaustedResponse();
+    }
+    charged = true;
 
     const userPrompt = buildRegenerateTweetPrompt(
       tweetIndex,
       context.length,
       context,
-      {},
+      config ?? {},
     );
 
     const response = await generateCompletion(SYSTEM_PROMPT_MICRO, userPrompt);
@@ -61,7 +72,7 @@ export async function POST(request: NextRequest) {
       throw new Error("Invalid response format from AI");
     }
 
-    const charCount = countTwitterChars(extractedContent);
+    const charCount = countThreadsChars(extractedContent);
 
     const processedTweet = {
       content: extractedContent,
@@ -76,6 +87,7 @@ export async function POST(request: NextRequest) {
       tweet: processedTweet,
     });
   } catch (error) {
+    if (charged) await guard.refund().catch(() => {});
     return apiErrorResponse(error, "regenerate-tweet");
   }
 }

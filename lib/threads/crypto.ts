@@ -22,8 +22,8 @@ function getKeyMaterial(): string {
   return key;
 }
 
-async function importKey(): Promise<CryptoKey> {
-  const keyBytes = fromBase64(getKeyMaterial());
+async function importKey(rawKey?: string): Promise<CryptoKey> {
+  const keyBytes = fromBase64(rawKey ?? getKeyMaterial());
   return crypto.subtle.importKey("raw", keyBytes, { name: ALGORITHM }, false, [
     "encrypt",
     "decrypt",
@@ -61,15 +61,28 @@ export async function decryptToken(stored: string): Promise<string> {
     throw new Error("Malformed encrypted token");
   }
 
-  const key = await importKey();
   const iv = fromBase64(ivPart);
   const ciphertext = fromBase64(cipherPart);
 
-  const plaintext = await crypto.subtle.decrypt(
-    { name: ALGORITHM, iv },
-    key,
-    ciphertext,
-  );
+  async function attempt(rawKey?: string): Promise<string> {
+    const key = await importKey(rawKey);
+    const plaintext = await crypto.subtle.decrypt(
+      { name: ALGORITHM, iv },
+      key,
+      ciphertext,
+    );
+    return new TextDecoder().decode(plaintext);
+  }
 
-  return new TextDecoder().decode(plaintext);
+  try {
+    return await attempt();
+  } catch (error) {
+    // Rotation support: a token encrypted with the previous key still works
+    // while the account is migrated on its next reconnect.
+    const previous = process.env.TOKEN_ENCRYPTION_KEY_OLD?.trim();
+    if (previous && previous !== getKeyMaterial()) {
+      return attempt(previous);
+    }
+    throw error;
+  }
 }

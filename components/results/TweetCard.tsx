@@ -7,7 +7,7 @@ import { Tweet, AffiliateProduct } from "@/types/thread";
 import { Copy, Edit2, RefreshCw, Save, SlidersHorizontal, ShoppingBag, Link as LinkIcon, Check, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
-import { countTwitterChars, cn, copyToClipboard, safeHttpUrl } from "@/lib/utils";
+import { countThreadsChars, cn, copyToClipboard, safeHttpUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 interface TweetCardProps {
@@ -105,8 +105,8 @@ export function TweetCard({
   };
 
   const currentCharCount = editing
-    ? countTwitterChars(editContent)
-    : countTwitterChars(tweet.content);
+    ? countThreadsChars(editContent)
+    : countThreadsChars(tweet.content);
 
   const formattedOrder = `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
 

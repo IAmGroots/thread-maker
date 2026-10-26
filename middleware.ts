@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit } from "@/lib/security/rateLimit";
+import { checkIpRateLimit, rateLimitHeaders } from "@/lib/security/rateLimit";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /**
@@ -94,10 +94,15 @@ function isAllowedOrigin(request: NextRequest): boolean {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Cron endpoints are called by an external scheduler, not a browser: they
-  // have no Origin/Referer and must not be rate-limited per IP. They are
-  // authenticated separately with CRON_SECRET inside the route handler.
-  if (pathname.startsWith("/api/cron/")) {
+  // Server-to-server endpoints have no Origin/Referer and must not be
+  // rate-limited per IP. Each one authenticates its caller itself:
+  // cron uses CRON_SECRET, the Pakasir webhook uses X-Secret plus a status
+  // re-check against the provider.
+  const isServerCallback =
+    pathname.startsWith("/api/cron/") ||
+    pathname.startsWith("/api/billing/pakasir/webhook");
+
+  if (isServerCallback) {
     return NextResponse.next();
   }
 
@@ -118,7 +123,7 @@ export async function middleware(request: NextRequest) {
     }
 
     const ip = getClientIp(request);
-    const rateLimit = checkRateLimit(ip, pathname);
+    const rateLimit = await checkIpRateLimit(ip, pathname);
 
     if (!rateLimit.success) {
       return NextResponse.json(
@@ -131,17 +136,15 @@ export async function middleware(request: NextRequest) {
           status: 429,
           headers: {
             "Retry-After": String(rateLimit.resetSeconds),
-            "X-RateLimit-Limit": String(rateLimit.limit),
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": String(rateLimit.resetSeconds),
+            ...rateLimitHeaders(rateLimit),
           },
         },
       );
     }
 
-    response.headers.set("X-RateLimit-Limit", String(rateLimit.limit));
-    response.headers.set("X-RateLimit-Remaining", String(rateLimit.remaining));
-    response.headers.set("X-RateLimit-Reset", String(rateLimit.resetSeconds));
+    Object.entries(rateLimitHeaders(rateLimit)).forEach(([name, value]) => {
+      response.headers.set(name, value);
+    });
   }
 
   return response;

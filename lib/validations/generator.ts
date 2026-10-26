@@ -97,4 +97,19 @@ export const regenerateTweetRequestSchema = z.object({
   context: z
     .array(z.string().trim().max(1000))
     .max(15, "Context cannot exceed 15 tweets"),
+  // The regenerated tweet must keep the thread's voice and affiliate rules.
+  config: z
+    .object({
+      style: writingStyleEnum.optional(),
+      tone: toneEnum.optional(),
+      language: languageEnum.optional(),
+      targetAudience: z.string().trim().max(200).optional(),
+      contentGoal: contentGoalEnum.optional(),
+      useHook: z.boolean().optional(),
+      useCTA: z.boolean().optional(),
+      includeEmojis: z.boolean().optional(),
+      includeHashtags: z.boolean().optional(),
+      affiliate: affiliateConfigSchema.optional(),
+    })
+    .optional(),
 });

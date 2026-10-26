@@ -5,4 +5,6 @@ interface CloudflareEnv {
   SUPABASE_SERVICE_ROLE_KEY: string;
   TOKEN_ENCRYPTION_KEY: string;
   CRON_SECRET: string;
+  NEXT_PUBLIC_APP_URL?: string;
+  TOKEN_ENCRYPTION_KEY_OLD?: string;
 }

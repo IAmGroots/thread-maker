@@ -1,5 +1,10 @@
 import "server-only";
 
+import { MAX_CHAIN_LENGTH, MAX_POST_CHARS } from "@/lib/threads/limits";
+import { fetchWithTimeout } from "@/lib/http/fetchTimeout";
+
+export { MAX_CHAIN_LENGTH, MAX_POST_CHARS };
+
 /**
  * Threads publishing helpers.
  *
@@ -20,9 +25,6 @@ import "server-only";
  */
 
 const THREADS_GRAPH_URL = "https://graph.threads.net/v1.0";
-
-export const MAX_CHAIN_LENGTH = 15;
-export const MAX_POST_CHARS = 500;
 
 // Container processing is asynchronous on Meta's side; poll until ready.
 const CONTAINER_POLL_INTERVAL_MS = 1500;
@@ -58,19 +60,41 @@ function isRetryableStatus(status: number): boolean {
   return status === 429 || status >= 500;
 }
 
+/**
+ * A 403 with a permission message usually means the stored token was granted
+ * before the app requested a scope it now needs (e.g. threads_manage_replies for
+ * replies). The fix is for the user to reconnect the account.
+ */
+export function isPermissionError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("does not have permission") ||
+    lower.includes("permission for this action") ||
+    lower.includes("insufficient permission")
+  );
+}
+
 export async function createContainer(
   accessToken: string,
   text: string,
   replyToId?: string,
+  imageUrl?: string,
 ): Promise<string> {
   const body = new URLSearchParams({
-    media_type: "TEXT",
-    text,
     access_token: accessToken,
+    text,
   });
+
+  if (imageUrl) {
+    body.set("media_type", "IMAGE");
+    body.set("image_url", imageUrl);
+  } else {
+    body.set("media_type", "TEXT");
+  }
+
   if (replyToId) body.set("reply_to_id", replyToId);
 
-  const response = await fetch(`${THREADS_GRAPH_URL}/me/threads`, {
+  const response = await fetchWithTimeout(`${THREADS_GRAPH_URL}/me/threads`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
@@ -95,15 +119,18 @@ interface ContainerStatus {
 /**
  * Poll a container until it is ready to publish.
  *
- * Returns once the container reports FINISHED/PUBLISHED, throws on ERROR, and
- * on timeout returns quietly so the caller's publish attempt (with its own
- * retries) is the final arbiter rather than us blocking forever.
+ * Returns once the container reports FINISHED/PUBLISHED and throws on ERROR or
+ * EXPIRED. If the status endpoint never returns a usable status (some accounts
+ * do not expose it), it waits one extra interval and returns, so the publish
+ * attempt itself decides. If a status was reported but never reached a ready
+ * state, that is a real timeout and is surfaced as an error.
  */
 export async function waitForContainer(
   accessToken: string,
   containerId: string,
 ): Promise<void> {
   let sawStatus = false;
+  let lastStatus: string | undefined;
 
   for (let attempt = 0; attempt < CONTAINER_POLL_MAX_ATTEMPTS; attempt++) {
     const params = new URLSearchParams({
@@ -111,14 +138,17 @@ export async function waitForContainer(
       access_token: accessToken,
     });
 
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${THREADS_GRAPH_URL}/${containerId}?${params.toString()}`,
     );
 
     if (response.ok) {
       const json = (await response.json()) as ContainerStatus;
       const status = json.status?.toUpperCase();
-      if (status) sawStatus = true;
+      if (status) {
+        sawStatus = true;
+        lastStatus = status;
+      }
 
       if (status === "FINISHED" || status === "PUBLISHED") return;
       if (status === "ERROR" || status === "EXPIRED") {
@@ -129,11 +159,16 @@ export async function waitForContainer(
     await sleep(CONTAINER_POLL_INTERVAL_MS);
   }
 
-  // If the status endpoint never returned a usable status, fall back to a small
-  // extra wait so the container has time to settle before we publish.
   if (!sawStatus) {
+    // No status signal at all: give the container a moment and let the publish
+    // call be the judge.
     await sleep(CONTAINER_POLL_INTERVAL_MS);
+    return;
   }
+
+  throw new Error(
+    `Threads container ${containerId} did not become ready (last status: ${lastStatus ?? "unknown"}).`,
+  );
 }
 
 export async function publishContainer(
@@ -145,7 +180,7 @@ export async function publishContainer(
     access_token: accessToken,
   });
 
-  const response = await fetch(`${THREADS_GRAPH_URL}/me/threads_publish`, {
+  const response = await fetchWithTimeout(`${THREADS_GRAPH_URL}/me/threads_publish`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
@@ -166,8 +201,12 @@ function isRetryable(error: unknown): boolean {
   if (error && typeof error === "object" && "retryable" in error) {
     return Boolean((error as { retryable?: boolean }).retryable);
   }
-  // Network errors are worth retrying too.
-  return error instanceof TypeError;
+  // Network errors and request timeouts are worth retrying too.
+  if (error instanceof TypeError) return true;
+  if (error instanceof Error) {
+    return error.name === "AbortError" || error.name === "TimeoutError";
+  }
+  return false;
 }
 
 /** Run an operation with exponential backoff on retryable failures. */
@@ -198,6 +237,17 @@ export interface PublishChainResult {
   error?: string;
 }
 
+export interface ChainOptions {
+  /** Index to resume from, after a partial failure. */
+  startIndex?: number;
+  /** Post id to reply to when resuming. */
+  replyToId?: string;
+  /** Image for the first post of the chain. */
+  imageUrl?: string;
+  /** Called after each published post so progress survives a crash. */
+  onProgress?: (index: number, postId: string) => Promise<void>;
+}
+
 /**
  * Publish an ordered list of tweets as a reply chain.
  *
@@ -208,15 +258,23 @@ export interface PublishChainResult {
 export async function publishThreadChain(
   accessToken: string,
   tweets: string[],
+  options: ChainOptions = {},
 ): Promise<PublishChainResult> {
   const total = tweets.length;
+  const startIndex = options.startIndex ?? 0;
   const postIds: string[] = [];
-  let previousPostId: string | undefined;
+  let previousPostId = options.replyToId;
 
-  for (let i = 0; i < total; i++) {
+  for (let i = startIndex; i < total; i++) {
     try {
       const containerId = await withRetry(
-        () => createContainer(accessToken, tweets[i], previousPostId),
+        () =>
+          createContainer(
+            accessToken,
+            tweets[i],
+            previousPostId,
+            i === 0 ? options.imageUrl : undefined,
+          ),
         `createContainer(${i + 1})`,
       );
 
@@ -229,6 +287,10 @@ export async function publishThreadChain(
 
       postIds.push(postId);
       previousPostId = postId;
+
+      if (options.onProgress) {
+        await options.onProgress(i, postId);
+      }
 
       // Pause before the next post so Threads does not throttle the chain.
       if (i < total - 1) {

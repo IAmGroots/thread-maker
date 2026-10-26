@@ -1,0 +1,10 @@
+-- =============================================================================
+-- Migration: 0005_sync_scopes (superseded placeholder)
+--
+-- The remote migration history already records version 0005 for the original
+-- sync_scopes migration. This local placeholder keeps the versions aligned so
+-- `supabase db push` does not report a missing local migration.
+--
+-- The trigger fix is applied by 0007_sync_scopes.sql (idempotent), which runs
+-- after this file on a fresh database.
+-- =============================================================================

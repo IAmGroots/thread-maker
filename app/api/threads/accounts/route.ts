@@ -1,50 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentWorkspace } from "@/lib/workspace/current";
+import { listAccounts } from "@/lib/social/accounts";
 import { apiErrorResponse } from "@/lib/security/apiError";
 
 /**
- * Lists the current user's connected Threads accounts. When `accountId` is
- * given, also returns the ids of saved threads already published to that
- * account, so the Saved page can show a per-account "already posted" badge.
+ * Lists the workspace's connected accounts. When `accountId` is given, also
+ * returns the ids of saved threads already published to that account, so the
+ * Saved page can show a per-account "already posted" badge.
  */
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 });
+    const workspace = await getCurrentWorkspace();
+    if (!workspace) {
+      return NextResponse.json(
+        { success: false, error: "Not authenticated" },
+        { status: 401 },
+      );
     }
 
     const accountId = new URL(request.url).searchParams.get("accountId");
-
-    const { data: accounts, error } = await supabase
-      .from("threads_accounts")
-      .select("id, username, token_expires_at, connected_at")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .order("connected_at", { ascending: false });
-
-    if (error) throw new Error(error.message);
+    const accounts = await listAccounts(supabase, workspace.id);
 
     let publishedThreadIds: string[] = [];
-    if (accountId) {
-      const { data: publishes, error: publishError } = await supabase
-        .from("thread_publishes")
-        .select("saved_thread_id, status")
-        .eq("user_id", user.id)
-        .eq("threads_account_id", accountId)
-        .in("status", ["published", "partial_published"])
-        .not("saved_thread_id", "is", null);
 
-      if (publishError) throw new Error(publishError.message);
-      publishedThreadIds = (publishes ?? [])
-        .map((row) => row.saved_thread_id)
-        .filter((id): id is string => Boolean(id));
+    if (accountId) {
+      const { data: targets, error: targetError } = await supabase
+        .from("post_targets")
+        .select("content_item_id")
+        .eq("workspace_id", workspace.id)
+        .eq("social_account_id", accountId)
+        .in("status", ["published", "partial"]);
+
+      if (targetError) throw new Error(targetError.message);
+
+      const contentIds = Array.from(
+        new Set((targets ?? []).map((row) => row.content_item_id)),
+      );
+
+      if (contentIds.length > 0) {
+        const { data: items, error: itemError } = await supabase
+          .from("content_items")
+          .select("legacy_saved_thread_id")
+          .in("id", contentIds)
+          .not("legacy_saved_thread_id", "is", null);
+
+        if (itemError) throw new Error(itemError.message);
+
+        publishedThreadIds = (items ?? [])
+          .map((row) => row.legacy_saved_thread_id)
+          .filter((id): id is string => Boolean(id));
+      }
     }
 
     return NextResponse.json({
       success: true,
-      accounts: accounts ?? [],
+      accounts,
       publishedThreadIds,
     });
   } catch (error) {

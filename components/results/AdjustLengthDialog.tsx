@@ -118,7 +118,7 @@ export function AdjustLengthDialog({
           {currentSelectedTweet && (
             <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
               <span className="font-semibold text-foreground font-mono block mb-1">
-                {t.adjustLength.selectTweetLabel(tweetIndex)} ({currentSelectedTweet.charCount} / 280)
+                {t.adjustLength.selectTweetLabel(tweetIndex)} ({currentSelectedTweet.charCount} / 500)
               </span>
               <p className="line-clamp-2 text-foreground/90">
                 {currentSelectedTweet.content}

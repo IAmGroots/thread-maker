@@ -5,6 +5,7 @@ import { validateAIConfig } from "@/config/ai-provider";
 import { UILocale } from "@/lib/i18n/types";
 import { SuggestedTopic } from "@/lib/prompts/topic-pool";
 import { apiErrorResponse } from "@/lib/security/apiError";
+import { guardAIRequest, creditsExhaustedResponse } from "@/lib/security/aiGuard";
 
 /**
  * Generate fresh, general "viral / hype" topics via the AI gateway.
@@ -152,6 +153,13 @@ function buildSystemPrompt(locale: UILocale, count: number): string {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = await guardAIRequest(request, "/api/suggest-topics", {
+    chargeCredits: false,
+  });
+  if (!guard.user) return guard.response;
+
+  let charged = false;
+
   try {
     const configValidation = validateAIConfig();
     if (!configValidation.valid) {
@@ -176,6 +184,11 @@ export async function POST(request: NextRequest) {
     const locale = validation.data.locale as UILocale;
     const count = Math.min(validation.data.count || DEFAULT_COUNT, MAX_COUNT);
 
+    if (!(await guard.consume())) {
+      return creditsExhaustedResponse();
+    }
+    charged = true;
+
     const systemPrompt = buildSystemPrompt(locale, count);
     const userPrompt =
       locale === "id"
@@ -191,6 +204,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: topics });
   } catch (error) {
+    if (charged) await guard.refund().catch(() => {});
     return apiErrorResponse(error, "suggest-topics");
   }
 }
